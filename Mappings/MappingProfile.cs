@@ -1,0 +1,299 @@
+using AutoMapper;
+using G2rismBeta.API.Models;
+using G2rismBeta.API.DTOs.Rol;
+using G2rismBeta.API.DTOs.Permiso;
+using G2rismBeta.API.DTOs.RolPermiso;
+using G2rismBeta.API.DTOs.Usuario;
+using G2rismBeta.API.DTOs.Auth;
+using G2rismBeta.API.DTOs.CategoriaCliente;
+using G2rismBeta.API.DTOs.Cliente;
+using G2rismBeta.API.DTOs.PreferenciaCliente;
+using G2rismBeta.API.DTOs.Empleado;
+using G2rismBeta.API.DTOs.Proveedor;
+using G2rismBeta.API.DTOs.ContratoProveedor;
+
+namespace G2rismBeta.API.Mappings;
+
+/// <summary>
+/// Perfil de mapeo de AutoMapper
+/// Define cómo convertir entre Modelos y DTOs
+/// </summary>
+public class MappingProfile : Profile
+{
+    public MappingProfile()
+    {
+        // ========================================
+        // MAPEOS PARA ROL
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<RolCreateDto, Rol>()
+            .ForMember(dest => dest.IdRol, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.FechaCreacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
+            .ForMember(dest => dest.RolesPermisos, opt => opt.Ignore());
+
+        // UpdateDto → Modelo (para actualizar)
+        CreateMap<RolUpdateDto, Rol>()
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore()) // No se modifica
+            .ForMember(dest => dest.FechaModificacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.RolesPermisos, opt => opt.Ignore());
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<Rol, RolResponseDto>()
+            .ForMember(dest => dest.CantidadPermisos, opt => opt.MapFrom(src => src.RolesPermisos.Count));
+
+        // ========================================
+        // MAPEOS PARA PERMISO
+        // ========================================
+
+        // CreateDto → Modelo
+        CreateMap<PermisoCreateDto, Permiso>()
+            .ForMember(dest => dest.IdPermiso, opt => opt.Ignore())
+            .ForMember(dest => dest.RolesPermisos, opt => opt.Ignore());
+
+        // UpdateDto → Modelo
+        CreateMap<PermisoUpdateDto, Permiso>()
+            .ForMember(dest => dest.RolesPermisos, opt => opt.Ignore());
+
+        // Modelo → ResponseDto
+        CreateMap<Permiso, PermisoResponseDto>()
+            .ForMember(dest => dest.CantidadRoles, opt => opt.MapFrom(src => src.RolesPermisos.Count));
+
+        // ========================================
+        // MAPEOS PARA ROL CON PERMISOS
+        // ========================================
+
+        // Rol → RolConPermisosDto (incluye la lista de permisos)
+        CreateMap<Rol, RolConPermisosDto>()
+            .ForMember(dest => dest.Permisos, opt => opt.MapFrom(src =>
+                src.RolesPermisos.Select(rp => rp.Permiso).ToList()));
+
+        // ========================================
+        // MAPEOS PARA USUARIO
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        // NOTA: El password NO se mapea aquí, se hashea en el Service antes de crear
+        CreateMap<UsuarioCreateDto, Usuario>()
+            .ForMember(dest => dest.IdUsuario, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.PasswordHash, opt => opt.Ignore()) // Se maneja en el Service
+            .ForMember(dest => dest.UltimoAcceso, opt => opt.Ignore())
+            .ForMember(dest => dest.IntentosFallidos, opt => opt.MapFrom(src => 0))
+            .ForMember(dest => dest.Bloqueado, opt => opt.MapFrom(src => false))
+            .ForMember(dest => dest.Estado, opt => opt.MapFrom(src => true))
+            .ForMember(dest => dest.FechaCreacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
+            .ForMember(dest => dest.UsuariosRoles, opt => opt.Ignore())
+            .ForMember(dest => dest.TokensRecuperacion, opt => opt.Ignore());
+
+        // UpdateDto → Modelo (para actualizar)
+        // Solo mapea los campos que vienen en el DTO (pueden ser null)
+        CreateMap<UsuarioUpdateDto, Usuario>()
+            .ForMember(dest => dest.IdUsuario, opt => opt.Ignore())
+            .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
+            .ForMember(dest => dest.UltimoAcceso, opt => opt.Ignore())
+            .ForMember(dest => dest.IntentosFallidos, opt => opt.Ignore())
+            .ForMember(dest => dest.Bloqueado, opt => opt.Ignore())
+            .ForMember(dest => dest.Estado, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaModificacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.UsuariosRoles, opt => opt.Ignore())
+            .ForMember(dest => dest.TokensRecuperacion, opt => opt.Ignore())
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Modelo → ResponseDto (para devolver - sin datos sensibles)
+        CreateMap<Usuario, UsuarioResponseDto>();
+
+        // Modelo → UsuarioConRolesDto (incluye roles)
+        CreateMap<Usuario, UsuarioConRolesDto>()
+            .ForMember(dest => dest.Roles, opt => opt.MapFrom(src =>
+                src.UsuariosRoles.Select(ur => ur.Rol).ToList()));
+
+        // Modelo → UsuarioLoginDto (para respuesta de login)
+        CreateMap<Usuario, UsuarioLoginDto>()
+            .ForMember(dest => dest.Roles, opt => opt.MapFrom(src =>
+                src.UsuariosRoles.Select(ur => ur.Rol.Nombre).ToList()))
+            .ForMember(dest => dest.Permisos, opt => opt.MapFrom(src =>
+                src.UsuariosRoles
+                    .SelectMany(ur => ur.Rol.RolesPermisos)
+                    .Select(rp => rp.Permiso.NombrePermiso)
+                    .Distinct()
+                    .ToList()));
+
+        // ========================================
+        // MAPEOS PARA AUTH (LOGIN RESPONSE)
+        // ========================================
+
+        // Usuario → LoginResponseDto
+        CreateMap<Usuario, LoginResponseDto>()
+            .ForMember(dest => dest.Success, opt => opt.MapFrom(src => true))
+            .ForMember(dest => dest.Message, opt => opt.MapFrom(src => $"¡Bienvenido de vuelta, {src.Username}!"))
+            .ForMember(dest => dest.Token, opt => opt.MapFrom(src => (string?)null))
+            .ForMember(dest => dest.TokenExpiration, opt => opt.MapFrom(src => (DateTime?)null))
+            .ForMember(dest => dest.Usuario, opt => opt.MapFrom(src => src))
+            .ForMember(dest => dest.FechaLogin, opt => opt.MapFrom(src => DateTime.Now));
+
+        // ========================================
+        // MAPEOS PARA CATEGORIA CLIENTE (CRM)
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<CategoriaClienteCreateDto, CategoriaCliente>()
+            .ForMember(dest => dest.IdCategoria, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.Clientes, opt => opt.Ignore());
+
+        // UpdateDto → Modelo (para actualizar)
+        CreateMap<CategoriaClienteUpdateDto, CategoriaCliente>()
+            .ForMember(dest => dest.Clientes, opt => opt.Ignore());
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<CategoriaCliente, CategoriaClienteResponseDto>()
+            .ForMember(dest => dest.CantidadClientes, opt => opt.Ignore()); // Se calcula en el Service
+
+        // ========================================
+        // MAPEOS PARA CLIENTE (CRM)
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<ClienteCreateDto, Cliente>()
+            .ForMember(dest => dest.IdCliente, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.Usuario, opt => opt.Ignore())
+            .ForMember(dest => dest.Categoria, opt => opt.Ignore())
+            .ForMember(dest => dest.Preferencia, opt => opt.Ignore());
+
+        // UpdateDto → Modelo (para actualizar)
+        CreateMap<ClienteUpdateDto, Cliente>()
+            .ForMember(dest => dest.IdCliente, opt => opt.Ignore())
+            .ForMember(dest => dest.IdUsuario, opt => opt.Ignore()) // No se puede cambiar el usuario
+            .ForMember(dest => dest.FechaRegistro, opt => opt.Ignore()) // No se modifica
+            .ForMember(dest => dest.Usuario, opt => opt.Ignore())
+            .ForMember(dest => dest.Categoria, opt => opt.Ignore())
+            .ForMember(dest => dest.Preferencia, opt => opt.Ignore());
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<Cliente, ClienteResponseDto>()
+            .ForMember(dest => dest.NombreCompleto, opt => opt.MapFrom(src => $"{src.Nombre} {src.Apellido}"))
+            .ForMember(dest => dest.Edad, opt => opt.MapFrom(src => src.Edad))
+            .ForMember(dest => dest.NombreCategoria, opt => opt.MapFrom(src => src.Categoria != null ? src.Categoria.Nombre : null))
+            .ForMember(dest => dest.DescuentoCategoria, opt => opt.MapFrom(src => src.Categoria != null ? src.Categoria.DescuentoPorcentaje : 0));
+
+        // Modelo → ClienteConCategoriaDto (incluye detalles completos de categoría)
+        CreateMap<Cliente, ClienteConCategoriaDto>()
+            .ForMember(dest => dest.Cliente, opt => opt.MapFrom(src => src))
+            .ForMember(dest => dest.Categoria, opt => opt.MapFrom(src => src.Categoria));
+
+        // ========================================
+        // MAPEOS PARA PREFERENCIA CLIENTE (CRM)
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<PreferenciaClienteCreateDto, PreferenciaCliente>()
+            .ForMember(dest => dest.IdPreferencia, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.FechaActualizacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.Cliente, opt => opt.Ignore());
+
+        // UpdateDto → Modelo (para actualizar)
+        CreateMap<PreferenciaClienteUpdateDto, PreferenciaCliente>()
+            .ForMember(dest => dest.IdPreferencia, opt => opt.Ignore())
+            .ForMember(dest => dest.IdCliente, opt => opt.Ignore()) // No se puede cambiar el cliente
+            .ForMember(dest => dest.FechaActualizacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.Cliente, opt => opt.Ignore());
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<PreferenciaCliente, PreferenciaClienteResponseDto>()
+            .ForMember(dest => dest.NombreCliente, opt => opt.MapFrom(src =>
+                src.Cliente != null ? $"{src.Cliente.Nombre} {src.Cliente.Apellido}" : null));
+
+        // ========================================
+        // MAPEOS PARA EMPLEADO (CRM)
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<EmpleadoCreateDto, Empleado>()
+            .ForMember(dest => dest.IdEmpleado, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.Usuario, opt => opt.Ignore())
+            .ForMember(dest => dest.Jefe, opt => opt.Ignore())
+            .ForMember(dest => dest.Subordinados, opt => opt.Ignore());
+
+        // UpdateDto → Modelo (para actualizar)
+        CreateMap<EmpleadoUpdateDto, Empleado>()
+            .ForMember(dest => dest.IdEmpleado, opt => opt.Ignore())
+            .ForMember(dest => dest.IdUsuario, opt => opt.Ignore()) // No se puede cambiar el usuario asociado
+            .ForMember(dest => dest.Usuario, opt => opt.Ignore())
+            .ForMember(dest => dest.Jefe, opt => opt.Ignore())
+            .ForMember(dest => dest.Subordinados, opt => opt.Ignore());
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<Empleado, EmpleadoResponseDto>()
+            .ForMember(dest => dest.NombreCompleto, opt => opt.MapFrom(src => src.NombreCompleto))
+            .ForMember(dest => dest.Edad, opt => opt.MapFrom(src => src.Edad))
+            .ForMember(dest => dest.AntiguedadAnios, opt => opt.MapFrom(src => src.AntiguedadAnios))
+            .ForMember(dest => dest.AntiguedadMeses, opt => opt.MapFrom(src => src.AntiguedadMeses))
+            .ForMember(dest => dest.EsJefe, opt => opt.MapFrom(src => src.EsJefe))
+            .ForMember(dest => dest.CantidadSubordinados, opt => opt.MapFrom(src => src.CantidadSubordinados))
+            .ForMember(dest => dest.Jefe, opt => opt.MapFrom(src => src.Jefe != null ? new JefeBasicInfoDto
+            {
+                IdEmpleado = src.Jefe.IdEmpleado,
+                NombreCompleto = src.Jefe.NombreCompleto,
+                Cargo = src.Jefe.Cargo
+            } : null))
+            .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.Usuario != null ? src.Usuario.Username : null))
+            // IMPORTANTE: El salario puede ser null si el usuario no tiene permisos
+            // El servicio decide si incluirlo o no según permisos
+            .ForMember(dest => dest.Salario, opt => opt.MapFrom(src => src.Salario));
+
+        // Mapeo de Empleado a JefeBasicInfoDto (para DTO anidados)
+        CreateMap<Empleado, JefeBasicInfoDto>()
+            .ForMember(dest => dest.NombreCompleto, opt => opt.MapFrom(src => src.NombreCompleto));
+
+        // ========================================
+        // MAPEOS PARA PROVEEDOR
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<ProveedorCreateDto, Proveedor>()
+            .ForMember(dest => dest.IdProveedor, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.FechaRegistro, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.Contratos, opt => opt.Ignore()); // Relación 1:N
+
+        // UpdateDto → Modelo (para actualizar)
+        CreateMap<ProveedorUpdateDto, Proveedor>()
+            .ForMember(dest => dest.IdProveedor, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaRegistro, opt => opt.Ignore()) // No se modifica
+            .ForMember(dest => dest.Contratos, opt => opt.Ignore()); // Relación 1:N
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<Proveedor, ProveedorResponseDto>()
+            .ForMember(dest => dest.ContratosActivos, opt => opt.Ignore()) // Se calcula en el Service
+            .ForMember(dest => dest.TieneContratosVigentes, opt => opt.Ignore()); // Se calcula en el Service
+
+
+        // ========================================
+        // MAPEOS PARA CONTRATO PROVEEDOR
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<ContratoProveedorCreateDto, ContratoProveedor>()
+            .ForMember(dest => dest.IdContrato, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.FechaCreacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.Proveedor, opt => opt.Ignore());
+
+        // UpdateDto → Modelo (para actualizar)
+        CreateMap<ContratoProveedorUpdateDto, ContratoProveedor>()
+            .ForMember(dest => dest.IdContrato, opt => opt.Ignore())
+            .ForMember(dest => dest.IdProveedor, opt => opt.Ignore()) // No se puede cambiar el proveedor
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore()) // No se modifica
+            .ForMember(dest => dest.Proveedor, opt => opt.Ignore());
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<ContratoProveedor, ContratoProveedorResponseDto>()
+            .ForMember(dest => dest.NombreProveedor, opt => opt.MapFrom(src =>
+                src.Proveedor != null ? src.Proveedor.NombreEmpresa : string.Empty))
+            .ForMember(dest => dest.EstaVigente, opt => opt.MapFrom(src => src.EstaVigente))
+            .ForMember(dest => dest.DiasRestantes, opt => opt.MapFrom(src => src.DiasRestantes))
+            .ForMember(dest => dest.ProximoAVencer, opt => opt.MapFrom(src => src.ProximoAVencer))
+            .ForMember(dest => dest.DuracionDias, opt => opt.MapFrom(src => src.DuracionDias));
+    }
+}

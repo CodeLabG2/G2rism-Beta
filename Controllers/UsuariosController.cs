@@ -410,7 +410,105 @@ public class UsuariosController : ControllerBase
     }
 
     // ========================================
-    // ENDPOINT 9: ASIGNAR ROLES A USUARIO
+    // ENDPOINT 9: ACTIVAR USUARIO
+    // ========================================
+
+    /// <summary>
+    /// Activar un usuario (cambiar estado a activo)
+    /// </summary>
+    /// <param name="id">ID del usuario a activar</param>
+    /// <returns>Confirmación de activación</returns>
+    /// <response code="200">Usuario activado exitosamente</response>
+    /// <response code="404">Usuario no encontrado</response>
+    /// <response code="500">Error interno del servidor</response>
+    [HttpPost("{id}/activar")]
+    [ProducesResponseType(typeof(ApiResponse<UsuarioResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<UsuarioResponseDto>>> ActivarUsuario(int id)
+    {
+        _logger.LogInformation("✅ Activando usuario: ID={IdUsuario}", id);
+
+        var resultado = await _usuarioService.CambiarEstadoUsuarioAsync(id, true);
+
+        if (!resultado)
+        {
+            _logger.LogWarning("⚠️ Usuario no encontrado para activar: ID={IdUsuario}", id);
+            return NotFound(new ApiErrorResponse
+            {
+                Success = false,
+                Message = $"Usuario con ID {id} no encontrado",
+                StatusCode = 404
+            });
+        }
+
+        // Obtener el usuario actualizado
+        var usuario = await _usuarioService.GetUsuarioByIdAsync(id);
+        var usuarioDto = _mapper.Map<UsuarioResponseDto>(usuario);
+
+        var response = new ApiResponse<UsuarioResponseDto>
+        {
+            Success = true,
+            Message = "Usuario activado exitosamente",
+            Data = usuarioDto
+        };
+
+        _logger.LogInformation("✅ Usuario activado: ID={IdUsuario}", id);
+
+        return Ok(response);
+    }
+
+    // ========================================
+    // ENDPOINT 10: DESACTIVAR USUARIO
+    // ========================================
+
+    /// <summary>
+    /// Desactivar un usuario (cambiar estado a inactivo)
+    /// </summary>
+    /// <param name="id">ID del usuario a desactivar</param>
+    /// <returns>Confirmación de desactivación</returns>
+    /// <response code="200">Usuario desactivado exitosamente</response>
+    /// <response code="404">Usuario no encontrado</response>
+    /// <response code="500">Error interno del servidor</response>
+    [HttpPost("{id}/desactivar")]
+    [ProducesResponseType(typeof(ApiResponse<UsuarioResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<UsuarioResponseDto>>> DesactivarUsuario(int id)
+    {
+        _logger.LogInformation("⏸️ Desactivando usuario: ID={IdUsuario}", id);
+
+        var resultado = await _usuarioService.CambiarEstadoUsuarioAsync(id, false);
+
+        if (!resultado)
+        {
+            _logger.LogWarning("⚠️ Usuario no encontrado para desactivar: ID={IdUsuario}", id);
+            return NotFound(new ApiErrorResponse
+            {
+                Success = false,
+                Message = $"Usuario con ID {id} no encontrado",
+                StatusCode = 404
+            });
+        }
+
+        // Obtener el usuario actualizado
+        var usuario = await _usuarioService.GetUsuarioByIdAsync(id);
+        var usuarioDto = _mapper.Map<UsuarioResponseDto>(usuario);
+
+        var response = new ApiResponse<UsuarioResponseDto>
+        {
+            Success = true,
+            Message = "Usuario desactivado exitosamente",
+            Data = usuarioDto
+        };
+
+        _logger.LogInformation("✅ Usuario desactivado: ID={IdUsuario}", id);
+
+        return Ok(response);
+    }
+
+    // ========================================
+    // ENDPOINT 11: ASIGNAR ROLES A USUARIO
     // ========================================
 
     /// <summary>
@@ -468,7 +566,7 @@ public class UsuariosController : ControllerBase
     }
 
     // ========================================
-    // ENDPOINT 10: REMOVER ROL DE USUARIO
+    // ENDPOINT 12: REMOVER ROL DE USUARIO
     // ========================================
 
     /// <summary>

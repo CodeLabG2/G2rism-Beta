@@ -5,6 +5,7 @@ using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.Repositories;
 using G2rismBeta.API.Services;
 using G2rismBeta.API.Middleware;
+using G2rismBeta.API.Configuration;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using System.Reflection;
@@ -22,6 +23,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
 });
 
+// ========================================
+// CONFIGURACIÓN DE SEGURIDAD
+// ========================================
+builder.Services.Configure<SecuritySettings>(
+    builder.Configuration.GetSection("Security"));
 
 // ============================================
 // CONFIGURACIÓN DE AUTOMAPPER

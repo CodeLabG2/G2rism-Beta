@@ -3,6 +3,7 @@ using AutoMapper;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.DTOs.Auth;
 using G2rismBeta.API.Models;
+using G2rismBeta.API.Helpers;
 
 namespace G2rismBeta.API.Controllers;
 
@@ -16,15 +17,18 @@ namespace G2rismBeta.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IUsuarioRepository _usuarioRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         IAuthService authService,
+        IUsuarioRepository usuarioRepository,
         IMapper mapper,
         ILogger<AuthController> logger)
     {
         _authService = authService;
+        _usuarioRepository = usuarioRepository;
         _mapper = mapper;
         _logger = logger;
     }
@@ -240,15 +244,15 @@ public class AuthController : ControllerBase
         try
         {
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var token = await _authService.SolicitarRecuperacionPasswordAsync(dto.Email, ipAddress);
+            var token = await _authService.SolicitarRecuperacionPasswordAsync(dto.Email, dto.FrontendUrl, ipAddress);
 
             var responseDto = new RecuperarPasswordResponseDto
             {
                 Success = true,
                 Message = "Si el email existe, recibirás un correo con instrucciones para recuperar tu contraseña",
                 EmailEnviado = true,
-                FechaExpiracion = DateTime.Now.AddHours(1),
-                Token = token // ⚠️ En producción, NO enviar el token en la respuesta
+                FechaExpiracion = DateTime.Now.AddHours(1)
+                // ✅ SEGURIDAD: El token NO se expone en la respuesta, solo se envía por email
             };
 
             var response = new ApiResponse<RecuperarPasswordResponseDto>
@@ -272,8 +276,7 @@ public class AuthController : ControllerBase
                 Success = true,
                 Message = "Si el email existe, recibirás un correo con instrucciones para recuperar tu contraseña",
                 EmailEnviado = false,
-                FechaExpiracion = DateTime.Now.AddHours(1),
-                Token = null
+                FechaExpiracion = DateTime.Now.AddHours(1)
             };
 
             return Ok(new ApiResponse<RecuperarPasswordResponseDto>
@@ -308,7 +311,8 @@ public class AuthController : ControllerBase
 
         try
         {
-            var resultado = await _authService.RestablecerPasswordAsync(dto.Token, dto.NewPassword);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var resultado = await _authService.RestablecerPasswordAsync(dto.Token, dto.NewPassword, ipAddress);
 
             if (!resultado)
             {
@@ -380,12 +384,31 @@ public class AuthController : ControllerBase
 
         try
         {
-            // Validar la contraseña actual
-            var usuario = await _authService.LoginAsync(dto.IdUsuario.ToString(), dto.CurrentPassword);
+            // ========================================
+            // PASO 1: Buscar el usuario por ID
+            // ========================================
+            var usuario = await _usuarioRepository.GetByIdAsync(dto.IdUsuario);
 
             if (usuario == null)
             {
-                _logger.LogWarning("⚠️ Contraseña actual incorrecta");
+                _logger.LogWarning("⚠️ Usuario no encontrado: ID={IdUsuario}", dto.IdUsuario);
+                return NotFound(new ApiErrorResponse
+                {
+                    Success = false,
+                    Message = "Usuario no encontrado",
+                    StatusCode = 404,
+                    ErrorCode = "USUARIO_NO_ENCONTRADO"
+                });
+            }
+
+            // ========================================
+            // PASO 2: Verificar la contraseña actual con BCrypt
+            // ========================================
+            bool passwordValida = PasswordHasher.VerifyPassword(dto.CurrentPassword, usuario.PasswordHash);
+
+            if (!passwordValida)
+            {
+                _logger.LogWarning("⚠️ Contraseña actual incorrecta para usuario ID={IdUsuario}", dto.IdUsuario);
                 return BadRequest(new ApiErrorResponse
                 {
                     Success = false,
@@ -395,23 +418,44 @@ public class AuthController : ControllerBase
                 });
             }
 
-            // Generar un token temporal para restablecer
-            var token = await _authService.SolicitarRecuperacionPasswordAsync(usuario.Email);
-
-            // Usar el token para cambiar la contraseña
-            var resultado = await _authService.RestablecerPasswordAsync(token, dto.NewPassword);
-
-            if (!resultado)
+            // ========================================
+            // PASO 3: Validar fortaleza de la nueva contraseña
+            // (FluentValidation ya lo hace, pero validamos por si acaso)
+            // ========================================
+            var (esValida, errorPassword) = PasswordHasher.ValidatePasswordStrength(dto.NewPassword);
+            if (!esValida)
             {
+                _logger.LogWarning("⚠️ Nueva contraseña débil para usuario ID={IdUsuario}", dto.IdUsuario);
                 return BadRequest(new ApiErrorResponse
                 {
                     Success = false,
-                    Message = "No se pudo cambiar la contraseña",
+                    Message = errorPassword ?? "La nueva contraseña no cumple los requisitos de seguridad",
                     StatusCode = 400,
-                    ErrorCode = "CAMBIO_FALLIDO"
+                    ErrorCode = "PASSWORD_DEBIL"
                 });
             }
 
+            // ========================================
+            // PASO 4: Actualizar la contraseña directamente
+            // ========================================
+            usuario.PasswordHash = PasswordHasher.HashPassword(dto.NewPassword);
+            usuario.FechaModificacion = DateTime.Now;
+
+            // 📊 AUDITORÍA: Registrar la IP para trazabilidad
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            _logger.LogInformation(
+                "🔐 Contraseña cambiada (autenticado) | Usuario: {Username} (ID: {UserId}) | IP: {IpAddress}",
+                usuario.Username,
+                usuario.IdUsuario,
+                ipAddress ?? "No registrada"
+            );
+
+            await _usuarioRepository.UpdateAsync(usuario);
+            await _usuarioRepository.SaveChangesAsync();
+
+            // ========================================
+            // PASO 5: Retornar respuesta exitosa
+            // ========================================
             var response = new ApiResponse<object>
             {
                 Success = true,
@@ -425,13 +469,13 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "❌ Error al cambiar contraseña");
-            return BadRequest(new ApiErrorResponse
+            _logger.LogError(ex, "❌ Error al cambiar contraseña para usuario ID={IdUsuario}", dto.IdUsuario);
+            return StatusCode(500, new ApiErrorResponse
             {
                 Success = false,
-                Message = ex.Message,
-                StatusCode = 400,
-                ErrorCode = "ERROR_CAMBIO_PASSWORD"
+                Message = "Error interno al cambiar la contraseña",
+                StatusCode = 500,
+                ErrorCode = "ERROR_INTERNO"
             });
         }
     }

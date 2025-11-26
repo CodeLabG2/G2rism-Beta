@@ -57,7 +57,10 @@ public interface IAuthService
     /// Solicitar recuperación de contraseña
     /// Genera un token y lo envía por email
     /// </summary>
-    Task<string> SolicitarRecuperacionPasswordAsync(string email, string? ipSolicitud = null);
+    /// <param name="email">Email del usuario</param>
+    /// <param name="frontendUrl">URL del frontend para construir el link de recuperación</param>
+    /// <param name="ipSolicitud">IP desde donde se hace la solicitud (opcional)</param>
+    Task<string> SolicitarRecuperacionPasswordAsync(string email, string frontendUrl, string? ipSolicitud = null);
 
     /// <summary>
     /// Validar un token de recuperación
@@ -67,7 +70,10 @@ public interface IAuthService
     /// <summary>
     /// Restablecer contraseña usando un token
     /// </summary>
-    Task<bool> RestablecerPasswordAsync(string token, string nuevaPassword);
+    /// <param name="token">Token de recuperación</param>
+    /// <param name="nuevaPassword">Nueva contraseña</param>
+    /// <param name="ipAddress">IP desde donde se realiza el cambio (opcional, para auditoría)</param>
+    Task<bool> RestablecerPasswordAsync(string token, string nuevaPassword, string? ipAddress = null);
 
     // ========================================
     // UTILIDADES

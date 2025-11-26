@@ -29,11 +29,4 @@ public class RecuperarPasswordResponseDto
     /// </summary>
     /// <example>2025-10-31T11:30:00</example>
     public DateTime FechaExpiracion { get; set; }
-
-    /// <summary>
-    /// Token de recuperación (solo para propósitos de testing/desarrollo)
-    /// En producción este campo debería ser null
-    /// </summary>
-    /// <example>null</example>
-    public string? Token { get; set; }
 }

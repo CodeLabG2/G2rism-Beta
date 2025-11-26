@@ -193,7 +193,10 @@ public class AuthService : IAuthService
     /// <summary>
     /// Solicitar recuperación de contraseña
     /// </summary>
-    public async Task<string> SolicitarRecuperacionPasswordAsync(string email, string? ipSolicitud = null)
+    /// <param name="email">Email del usuario</param>
+    /// <param name="frontendUrl">URL del frontend para construir el link de recuperación</param>
+    /// <param name="ipSolicitud">IP desde donde se hace la solicitud (opcional)</param>
+    public async Task<string> SolicitarRecuperacionPasswordAsync(string email, string frontendUrl, string? ipSolicitud = null)
     {
         // 1. Buscar el usuario por email
         var usuario = await _usuarioRepository.GetByEmailAsync(email);
@@ -223,8 +226,8 @@ public class AuthService : IAuthService
 
         await _tokenRepository.CrearTokenAsync(tokenRecuperacion);
 
-        // 4. Enviar email con el token
-        await EmailHelper.EnviarEmailRecuperacion(usuario.Email, token);
+        // 4. Enviar email con el token y el link del frontend
+        await EmailHelper.EnviarEmailRecuperacion(usuario.Email, token, frontendUrl);
 
         return token;
     }
@@ -240,7 +243,10 @@ public class AuthService : IAuthService
     /// <summary>
     /// Restablecer contraseña con token
     /// </summary>
-    public async Task<bool> RestablecerPasswordAsync(string token, string nuevaPassword)
+    /// <param name="token">Token de recuperación</param>
+    /// <param name="nuevaPassword">Nueva contraseña</param>
+    /// <param name="ipAddress">IP desde donde se realiza el cambio (opcional, para auditoría)</param>
+    public async Task<bool> RestablecerPasswordAsync(string token, string nuevaPassword, string? ipAddress = null)
     {
         // 1. Validar el token
         var esValido = await _tokenRepository.ValidarTokenAsync(token);
@@ -277,6 +283,9 @@ public class AuthService : IAuthService
         // Desbloquear y resetear intentos
         usuario.Bloqueado = false;
         usuario.IntentosFallidos = 0;
+
+        // 📊 AUDITORÍA: Registrar la IP para trazabilidad
+        Console.WriteLine($"🔐 Contraseña restablecida via token | Usuario: {usuario.Username} (ID: {usuario.IdUsuario}) | IP: {ipAddress ?? "No registrada"}");
 
         await _usuarioRepository.UpdateAsync(usuario);
         await _usuarioRepository.SaveChangesAsync();

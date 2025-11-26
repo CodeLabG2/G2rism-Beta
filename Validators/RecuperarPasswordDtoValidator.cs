@@ -1,15 +1,22 @@
 using FluentValidation;
 using G2rismBeta.API.DTOs.Auth;
+using G2rismBeta.API.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace G2rismBeta.API.Validators;
 
 /// <summary>
 /// Validador para RecuperarPasswordRequestDto
+/// Incluye validación de whitelist para prevenir ataques de phishing
 /// </summary>
 public class RecuperarPasswordDtoValidator : AbstractValidator<RecuperarPasswordRequestDto>
 {
-    public RecuperarPasswordDtoValidator()
+    private readonly SecuritySettings _securitySettings;
+
+    public RecuperarPasswordDtoValidator(IOptions<SecuritySettings> securitySettings)
     {
+        _securitySettings = securitySettings.Value;
+
         // ========================================
         // VALIDACIÓN DE EMAIL
         // ========================================
@@ -22,7 +29,7 @@ public class RecuperarPasswordDtoValidator : AbstractValidator<RecuperarPassword
                 .WithMessage("El email no debe contener espacios al inicio o al final");
 
         // ========================================
-        // VALIDACIÓN DE FRONTEND URL
+        // VALIDACIÓN DE FRONTEND URL (CON WHITELIST)
         // ========================================
 
         RuleFor(x => x.FrontendUrl)
@@ -31,6 +38,22 @@ public class RecuperarPasswordDtoValidator : AbstractValidator<RecuperarPassword
                 && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
                 .WithMessage("La URL del frontend debe ser una URL válida (http o https)")
             .Must(url => !url.EndsWith("/"))
-                .WithMessage("La URL del frontend no debe terminar con '/'");
+                .WithMessage("La URL del frontend no debe terminar con '/'")
+            .Must(url =>
+            {
+                // ✅ SEGURIDAD: Validación contra whitelist para prevenir phishing
+                if (_securitySettings.AllowedFrontendUrls == null || !_securitySettings.AllowedFrontendUrls.Any())
+                {
+                    // Si no hay whitelist configurada, permitir solo localhost en desarrollo
+                    return url.Contains("localhost");
+                }
+
+                // Normalizar URL eliminando barra final si existe (para comparación)
+                var normalizedUrl = url.TrimEnd('/');
+
+                return _securitySettings.AllowedFrontendUrls.Any(allowedUrl =>
+                    normalizedUrl.Equals(allowedUrl.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+            })
+            .WithMessage("La URL del frontend no está autorizada. Solo se permiten URLs configuradas en la whitelist de seguridad");
     }
 }

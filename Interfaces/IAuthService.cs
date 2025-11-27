@@ -44,10 +44,35 @@ public interface IAuthService
     Task<Usuario?> LoginAsync(string usernameOrEmail, string password);
 
     /// <summary>
-    /// Cerrar sesión (Logout)
-    /// Por ahora solo actualiza el estado, más adelante se invalidarán JWT tokens
+    /// Generar tokens JWT (access token y refresh token) para un usuario
     /// </summary>
-    Task LogoutAsync(int idUsuario);
+    /// <param name="usuario">Usuario autenticado</param>
+    /// <param name="ipAddress">Dirección IP del cliente</param>
+    /// <param name="userAgent">User Agent del navegador</param>
+    /// <returns>Tupla con access token, refresh token y expiración</returns>
+    Task<(string AccessToken, string RefreshToken, DateTime Expiration)> GenerarTokensAsync(
+        Usuario usuario,
+        string? ipAddress = null,
+        string? userAgent = null);
+
+    /// <summary>
+    /// Renovar access token usando refresh token
+    /// </summary>
+    /// <param name="refreshToken">Refresh token válido</param>
+    /// <param name="ipAddress">IP del cliente</param>
+    /// <param name="userAgent">User Agent del navegador</param>
+    /// <returns>Tupla con nuevo access token, nuevo refresh token y expiración</returns>
+    Task<(string AccessToken, string RefreshToken, DateTime Expiration)> RefreshTokenAsync(
+        string refreshToken,
+        string? ipAddress = null,
+        string? userAgent = null);
+
+    /// <summary>
+    /// Cerrar sesión y revocar refresh tokens
+    /// </summary>
+    /// <param name="idUsuario">ID del usuario</param>
+    /// <param name="refreshToken">Refresh token específico a revocar (opcional)</param>
+    Task LogoutAsync(int idUsuario, string? refreshToken = null);
 
     // ========================================
     // RECUPERACIÓN DE CONTRASEÑA

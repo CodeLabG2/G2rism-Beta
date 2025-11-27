@@ -20,17 +20,22 @@ public class LoginResponseDto
     public string Message { get; set; } = string.Empty;
 
     /// <summary>
-    /// Token JWT (para futuras implementaciones)
-    /// Por ahora será null hasta implementar JWT
+    /// Token JWT (access token)
     /// </summary>
-    /// <example>null</example>
+    /// <example>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</example>
     public string? Token { get; set; }
 
     /// <summary>
-    /// Fecha de expiración del token (para futuras implementaciones)
+    /// Fecha de expiración del access token
     /// </summary>
-    /// <example>null</example>
+    /// <example>2025-11-26T12:00:00</example>
     public DateTime? TokenExpiration { get; set; }
+
+    /// <summary>
+    /// Refresh token para renovar el access token
+    /// </summary>
+    /// <example>abc123def456...</example>
+    public string? RefreshToken { get; set; }
 
     /// <summary>
     /// Información del usuario autenticado

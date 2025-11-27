@@ -53,6 +53,11 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<TokenRecuperacion> TokensRecuperacion { get; set; }
 
+    /// <summary>
+    /// Tabla de Refresh Tokens (JWT)
+    /// </summary>
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+
     // ========================================
     // MÓDULO: CLIENTES Y EMPLEADOS (CRM)
     // ========================================
@@ -249,6 +254,36 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(t => t.IdUsuario)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("fk_token_usuario");
+        });
+
+        // ====================================
+        // CONFIGURACIÓN DE LA TABLA REFRESH_TOKENS
+        // ====================================
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            // Índice único en token (debe ser único en el sistema)
+            entity.HasIndex(e => e.Token)
+                .IsUnique()
+                .HasDatabaseName("idx_refresh_token_unique");
+
+            // Índice en id_usuario para consultas rápidas de tokens por usuario
+            entity.HasIndex(e => e.IdUsuario)
+                .HasDatabaseName("idx_refresh_token_usuario");
+
+            // Índice en fecha_expiracion para limpiar tokens expirados
+            entity.HasIndex(e => e.FechaExpiracion)
+                .HasDatabaseName("idx_refresh_token_expiracion");
+
+            // Índice compuesto para buscar tokens activos de un usuario
+            entity.HasIndex(e => new { e.IdUsuario, e.Revocado, e.FechaExpiracion })
+                .HasDatabaseName("idx_refresh_token_usuario_activo");
+
+            // Relación con Usuario
+            entity.HasOne(rt => rt.Usuario)
+                .WithMany() // No necesitamos navegación inversa en Usuario por ahora
+                .HasForeignKey(rt => rt.IdUsuario)
+                .OnDelete(DeleteBehavior.Cascade) // Si se elimina usuario, eliminar sus tokens
+                .HasConstraintName("fk_refresh_token_usuario");
         });
 
         // ====================================

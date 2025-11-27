@@ -159,8 +159,23 @@ public class AuthController : ControllerBase
                 });
             }
 
+            // Generar tokens JWT
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+            var (accessToken, refreshToken, expiration) = await _authService.GenerarTokensAsync(
+                usuario,
+                ipAddress,
+                userAgent
+            );
+
             // Mapear a DTO de respuesta
             var responseDto = _mapper.Map<LoginResponseDto>(usuario);
+
+            // Agregar tokens JWT al response
+            responseDto.Token = accessToken;
+            responseDto.TokenExpiration = expiration;
+            responseDto.RefreshToken = refreshToken;
 
             var response = new ApiResponse<LoginResponseDto>
             {
@@ -169,8 +184,8 @@ public class AuthController : ControllerBase
                 Data = responseDto
             };
 
-            _logger.LogInformation("✅ Login exitoso: Usuario={Username}, ID={IdUsuario}",
-                usuario.Username, usuario.IdUsuario);
+            _logger.LogInformation("✅ Login exitoso: Usuario={Username}, ID={IdUsuario}, IP={IpAddress}",
+                usuario.Username, usuario.IdUsuario, ipAddress);
 
             return Ok(response);
         }
@@ -220,7 +235,90 @@ public class AuthController : ControllerBase
     }
 
     // ========================================
-    // ENDPOINT 4: RECUPERAR PASSWORD
+    // ENDPOINT 4: REFRESH TOKEN (RENOVAR ACCESS TOKEN)
+    // ========================================
+
+    /// <summary>
+    /// Renovar access token usando refresh token
+    /// </summary>
+    /// <param name="dto">Refresh token válido</param>
+    /// <returns>Nuevo access token y refresh token</returns>
+    /// <response code="200">Tokens renovados exitosamente</response>
+    /// <response code="401">Refresh token inválido o expirado</response>
+    /// <response code="500">Error interno del servidor</response>
+    [HttpPost("refresh")]
+    [ProducesResponseType(typeof(ApiResponse<RefreshTokenResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<RefreshTokenResponseDto>>> RefreshToken(
+        [FromBody] RefreshTokenRequestDto dto)
+    {
+        _logger.LogInformation("🔄 Solicitud de renovación de token");
+
+        try
+        {
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+            var (newAccessToken, newRefreshToken, expiration) = await _authService.RefreshTokenAsync(
+                dto.RefreshToken,
+                ipAddress,
+                userAgent
+            );
+
+            // Obtener información del usuario desde el nuevo access token
+            var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jwtToken = tokenHandler.ReadJwtToken(newAccessToken);
+
+            var userId = int.Parse(jwtToken.Claims.First(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier).Value);
+            var username = jwtToken.Claims.First(c => c.Type == System.Security.Claims.ClaimTypes.Name).Value;
+
+            var responseDto = new RefreshTokenResponseDto
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken,
+                TokenExpiration = expiration,
+                IdUsuario = userId,
+                Username = username
+            };
+
+            var response = new ApiResponse<RefreshTokenResponseDto>
+            {
+                Success = true,
+                Message = "Tokens renovados exitosamente",
+                Data = responseDto
+            };
+
+            _logger.LogInformation("✅ Tokens renovados: Usuario={Username}, IP={IpAddress}", username, ipAddress);
+
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            _logger.LogWarning("⚠️ Refresh token inválido: {Message}", ex.Message);
+            return Unauthorized(new ApiErrorResponse
+            {
+                Success = false,
+                Message = ex.Message,
+                StatusCode = 401,
+                ErrorCode = "REFRESH_TOKEN_INVALIDO"
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning("⚠️ Usuario no encontrado: {Message}", ex.Message);
+            return Unauthorized(new ApiErrorResponse
+            {
+                Success = false,
+                Message = "Usuario no encontrado",
+                StatusCode = 401,
+                ErrorCode = "USUARIO_NO_ENCONTRADO"
+            });
+        }
+    }
+
+    // ========================================
+    // ENDPOINT 5: RECUPERAR PASSWORD
     // ========================================
 
     /// <summary>

@@ -1,11 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using G2rismBeta.API.Data;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.Repositories;
 using G2rismBeta.API.Services;
 using G2rismBeta.API.Middleware;
 using G2rismBeta.API.Configuration;
+using G2rismBeta.API.Helpers;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using System.Reflection;
@@ -51,6 +55,7 @@ builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRolRepository, RolRepository>();
 builder.Services.AddScoped<IUsuarioRolRepository, UsuarioRolRepository>();
 builder.Services.AddScoped<ITokenRecuperacionRepository, TokenRecuperacionRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 // ========================================
 // REGISTRAR REPOSITORIES - CLIENTES Y EMPLEADOS (CRM)
@@ -86,6 +91,7 @@ builder.Services.AddScoped<IPermisoService, PermisoService>();
 // ========================================
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<JwtTokenGenerator>();
 
 // ========================================
 // REGISTRAR SERVICES - CLIENTES Y EMPLEADOS (CRM)
@@ -108,6 +114,36 @@ builder.Services.AddScoped<IContratoProveedorService, ContratoProveedorService>(
 // ========================================
 
 builder.Services.AddScoped<IAerolineaService, AerolineaService>();
+
+// ========================================
+// CONFIGURACIÓN DE AUTENTICACIÓN JWT
+// ========================================
+
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey no está configurada");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.RequireHttpsMetadata = false; // En producción, cambiar a true
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidateAudience = true,
+        ValidAudience = jwtSettings["Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero // No tolerancia para expiración
+    };
+});
 
 // ========================================
 // REGISTRAR FLUENTVALIDATION
@@ -133,6 +169,31 @@ builder.Services.AddSwaggerGen(c =>
         {
             Name = "CodeLabG2",
             Email = "codelabg2@example.com"
+        }
+    });
+
+    // Configurar autenticación JWT en Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header usando el esquema Bearer. Ejemplo: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
         }
     });
 });
@@ -194,7 +255,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+
+// Middleware de autenticación (debe ir antes de autorización)
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 // Mensaje de bienvenida en consola

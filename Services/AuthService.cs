@@ -6,7 +6,7 @@ namespace G2rismBeta.API.Services;
 
 /// <summary>
 /// Implementación del servicio de Autenticación
-/// Incluye Register, Login, Logout y Recuperación de contraseña
+/// Incluye Register, Login, Logout, Recuperación de contraseña y JWT
 /// </summary>
 public class AuthService : IAuthService
 {
@@ -14,6 +14,9 @@ public class AuthService : IAuthService
     private readonly IUsuarioRolRepository _usuarioRolRepository;
     private readonly ITokenRecuperacionRepository _tokenRepository;
     private readonly IRolRepository _rolRepository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly JwtTokenGenerator _jwtTokenGenerator;
+    private readonly IConfiguration _configuration;
 
     // Configuración de seguridad
     private const int MAX_INTENTOS_FALLIDOS = 5;
@@ -23,12 +26,18 @@ public class AuthService : IAuthService
         IUsuarioRepository usuarioRepository,
         IUsuarioRolRepository usuarioRolRepository,
         ITokenRecuperacionRepository tokenRepository,
-        IRolRepository rolRepository)
+        IRolRepository rolRepository,
+        IRefreshTokenRepository refreshTokenRepository,
+        JwtTokenGenerator jwtTokenGenerator,
+        IConfiguration configuration)
     {
         _usuarioRepository = usuarioRepository;
         _usuarioRolRepository = usuarioRolRepository;
         _tokenRepository = tokenRepository;
         _rolRepository = rolRepository;
+        _refreshTokenRepository = refreshTokenRepository;
+        _jwtTokenGenerator = jwtTokenGenerator;
+        _configuration = configuration;
     }
 
     // ========================================
@@ -170,17 +179,152 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// Cerrar sesión
+    /// Generar tokens JWT (access token y refresh token) para un usuario
     /// </summary>
-    public async Task LogoutAsync(int idUsuario)
+    /// <param name="usuario">Usuario autenticado</param>
+    /// <param name="ipAddress">Dirección IP del cliente</param>
+    /// <param name="userAgent">User Agent del navegador</param>
+    /// <returns>Tupla con access token, refresh token y expiración</returns>
+    public async Task<(string AccessToken, string RefreshToken, DateTime Expiration)> GenerarTokensAsync(
+        Usuario usuario,
+        string? ipAddress = null,
+        string? userAgent = null)
     {
-        // Por ahora solo registramos el logout
-        // Más adelante aquí se invalidará el JWT token
+        // 1. Obtener roles y permisos del usuario
+        var usuarioConRoles = await _usuarioRepository.GetByIdWithRolesAsync(usuario.IdUsuario);
+        if (usuarioConRoles == null)
+        {
+            throw new InvalidOperationException("No se pudo obtener la información del usuario");
+        }
+
+        var roles = usuarioConRoles.UsuariosRoles
+            .Select(ur => ur.Rol?.Nombre ?? "")
+            .Where(r => !string.IsNullOrEmpty(r))
+            .ToList();
+
+        var permisos = usuarioConRoles.UsuariosRoles
+            .SelectMany(ur => ur.Rol?.RolesPermisos ?? new List<RolPermiso>())
+            .Select(rp => rp.Permiso?.NombrePermiso ?? "")
+            .Where(p => !string.IsNullOrEmpty(p))
+            .Distinct()
+            .ToList();
+
+        // 2. Generar Access Token (JWT)
+        var accessToken = _jwtTokenGenerator.GenerateAccessToken(
+            usuario.IdUsuario,
+            usuario.Username,
+            usuario.Email,
+            usuario.TipoUsuario,
+            roles,
+            permisos
+        );
+
+        // 3. Generar Refresh Token
+        var refreshToken = _jwtTokenGenerator.GenerateRefreshToken();
+
+        // 4. Calcular fecha de expiración
+        var expirationDays = int.Parse(_configuration["Jwt:RefreshTokenExpirationDays"] ?? "7");
+        var expiration = DateTime.UtcNow.AddDays(expirationDays);
+
+        // 5. Guardar Refresh Token en la base de datos
+        var refreshTokenEntity = new RefreshToken
+        {
+            IdUsuario = usuario.IdUsuario,
+            Token = refreshToken,
+            FechaCreacion = DateTime.UtcNow,
+            FechaExpiracion = expiration,
+            Revocado = false,
+            IpCreacion = ipAddress,
+            UserAgent = userAgent
+        };
+
+        await _refreshTokenRepository.AddAsync(refreshTokenEntity);
+        await _refreshTokenRepository.SaveChangesAsync();
+
+        // 6. Calcular expiración del access token
+        var accessTokenExpiration = DateTime.UtcNow.AddMinutes(
+            int.Parse(_configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60")
+        );
+
+        return (accessToken, refreshToken, accessTokenExpiration);
+    }
+
+    /// <summary>
+    /// Renovar access token usando refresh token
+    /// </summary>
+    /// <param name="refreshToken">Refresh token válido</param>
+    /// <param name="ipAddress">IP del cliente</param>
+    /// <param name="userAgent">User Agent del navegador</param>
+    /// <returns>Tupla con nuevo access token, nuevo refresh token y expiración</returns>
+    public async Task<(string AccessToken, string RefreshToken, DateTime Expiration)> RefreshTokenAsync(
+        string refreshToken,
+        string? ipAddress = null,
+        string? userAgent = null)
+    {
+        // 1. Validar el refresh token
+        var tokenEntity = await _refreshTokenRepository.GetActiveTokenAsync(refreshToken);
+
+        if (tokenEntity == null)
+        {
+            throw new UnauthorizedAccessException("Refresh token inválido o expirado");
+        }
+
+        // 2. Obtener el usuario
+        var usuario = await _usuarioRepository.GetByIdAsync(tokenEntity.IdUsuario);
+
+        if (usuario == null)
+        {
+            throw new KeyNotFoundException("Usuario no encontrado");
+        }
+
+        // Verificar que el usuario esté activo
+        if (!usuario.Estado || usuario.Bloqueado)
+        {
+            throw new UnauthorizedAccessException("Usuario inactivo o bloqueado");
+        }
+
+        // 3. Revocar el refresh token anterior (rotación de tokens)
+        tokenEntity.Revocado = true;
+        tokenEntity.FechaRevocacion = DateTime.UtcNow;
+        await _refreshTokenRepository.UpdateAsync(tokenEntity);
+        await _refreshTokenRepository.SaveChangesAsync();
+
+        // 4. Generar nuevos tokens
+        var (newAccessToken, newRefreshToken, expiration) = await GenerarTokensAsync(
+            usuario,
+            ipAddress,
+            userAgent
+        );
+
+        // 5. Registrar el token que reemplazó al anterior
+        tokenEntity.ReemplazadoPor = newRefreshToken;
+        await _refreshTokenRepository.UpdateAsync(tokenEntity);
+        await _refreshTokenRepository.SaveChangesAsync();
+
+        return (newAccessToken, newRefreshToken, expiration);
+    }
+
+    /// <summary>
+    /// Cerrar sesión y revocar refresh tokens
+    /// </summary>
+    public async Task LogoutAsync(int idUsuario, string? refreshToken = null)
+    {
         var usuario = await _usuarioRepository.GetByIdAsync(idUsuario);
+
         if (usuario != null)
         {
-            // Opcional: registrar en una tabla de auditoría
-            Console.WriteLine($"Usuario {usuario.Username} cerró sesión");
+            // Si se proporciona un refresh token específico, revocarlo
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                await _refreshTokenRepository.RevokeTokenAsync(refreshToken);
+            }
+            else
+            {
+                // Si no, revocar todos los tokens del usuario
+                await _refreshTokenRepository.RevokeAllUserTokensAsync(idUsuario);
+            }
+
+            Console.WriteLine($"🔓 Usuario {usuario.Username} cerró sesión");
         }
 
         await Task.CompletedTask;

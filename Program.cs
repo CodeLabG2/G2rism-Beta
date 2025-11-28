@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Text;
@@ -12,6 +13,7 @@ using G2rismBeta.API.Services;
 using G2rismBeta.API.Middleware;
 using G2rismBeta.API.Configuration;
 using G2rismBeta.API.Helpers;
+using G2rismBeta.API.Authorization;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using System.Reflection;
@@ -146,6 +148,68 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero // No tolerancia para expiración
     };
+});
+
+// ========================================
+// CONFIGURACIÓN DE AUTORIZACIÓN Y POLICIES
+// ========================================
+
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+builder.Services.AddAuthorization(options =>
+{
+    // ====================================================
+    // POLICIES BASADAS EN ROLES
+    // ====================================================
+
+    // Política: Solo administradores (Super Admin + Admin)
+    options.AddPolicy("RequireAdminRole", policy =>
+        policy.RequireRole("Super Administrador", "Administrador"));
+
+    // Política: Solo Super Administrador
+    options.AddPolicy("RequireSuperAdminRole", policy =>
+        policy.RequireRole("Super Administrador"));
+
+    // Política: Empleados (Super Admin + Admin + Empleado)
+    options.AddPolicy("RequireEmployeeRole", policy =>
+        policy.RequireRole("Super Administrador", "Administrador", "Empleado"));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO ROLES
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:roles.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("roles.crear")));
+
+    options.AddPolicy("RequirePermission:roles.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("roles.leer")));
+
+    options.AddPolicy("RequirePermission:roles.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("roles.actualizar")));
+
+    options.AddPolicy("RequirePermission:roles.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("roles.eliminar")));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO PERMISOS
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:permisos.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("permisos.crear")));
+
+    options.AddPolicy("RequirePermission:permisos.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("permisos.leer")));
+
+    options.AddPolicy("RequirePermission:permisos.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("permisos.actualizar")));
+
+    options.AddPolicy("RequirePermission:permisos.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("permisos.eliminar")));
+
+    // ====================================================
+    // NOTA: Policies adicionales pueden agregarse dinámicamente
+    // o crearse on-demand usando el formato "RequirePermission:{permiso}"
+    // ====================================================
 });
 
 // ========================================

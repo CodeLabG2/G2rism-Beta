@@ -41,6 +41,7 @@ public class RolesController : ControllerBase
     /// </remarks>
     /// <response code="200">Lista de roles obtenida exitosamente</response>
     [HttpGet]
+    [Authorize(Policy = "RequirePermission:roles.leer")]
     [ProducesResponseType(typeof(IEnumerable<RolResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<RolResponseDto>>> GetAllRoles()
     {
@@ -166,6 +167,7 @@ public class RolesController : ControllerBase
     /// <response code="201">Rol creado exitosamente</response>
     /// <response code="400">Datos inválidos o nombre duplicado</response>
     [HttpPost]
+    [Authorize(Policy = "RequirePermission:roles.crear")]
     [ProducesResponseType(typeof(RolResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<RolResponseDto>> CreateRol([FromBody] RolCreateDto rolCreateDto)
@@ -224,6 +226,7 @@ public class RolesController : ControllerBase
     /// <response code="400">Datos inválidos</response>
     /// <response code="404">Rol no encontrado</response>
     [HttpPut("{id}")]
+    [Authorize(Policy = "RequirePermission:roles.actualizar")]
     [ProducesResponseType(typeof(RolResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -277,7 +280,7 @@ public class RolesController : ControllerBase
     /// <response code="404">Rol no encontrado</response>
     /// <response code="409">No se puede eliminar (tiene usuarios o es rol del sistema)</response>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Super Administrador")]
+    [Authorize(Policy = "RequirePermission:roles.eliminar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

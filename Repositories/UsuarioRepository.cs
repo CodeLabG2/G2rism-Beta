@@ -58,7 +58,9 @@ public class UsuarioRepository : GenericRepository<Usuario>, IUsuarioRepository
     {
         return await _dbSet
             .Include(u => u.UsuariosRoles) // Incluir la tabla intermedia
-                .ThenInclude(ur => ur.Rol) // Incluir los roles
+                .ThenInclude(ur => ur.Rol!) // Incluir los roles
+                    .ThenInclude(r => r.RolesPermisos) // Incluir permisos del rol
+                        .ThenInclude(rp => rp.Permiso) // Incluir detalles del permiso
             .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario);
     }
 

@@ -30,6 +30,7 @@ public class PermisosController : ControllerBase
     /// Obtener todos los permisos del sistema
     /// </summary>
     [HttpGet]
+    [Authorize(Policy = "RequirePermission:permisos.leer")]
     [ProducesResponseType(typeof(IEnumerable<PermisoResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<PermisoResponseDto>>> GetAllPermisos()
     {
@@ -151,6 +152,7 @@ public class PermisosController : ControllerBase
     /// Nota: El campo nombrePermiso se genera automáticamente como "modulo.accion"
     /// </remarks>
     [HttpPost]
+    [Authorize(Policy = "RequirePermission:permisos.crear")]
     [ProducesResponseType(typeof(PermisoResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PermisoResponseDto>> CreatePermiso([FromBody] PermisoCreateDto permisoCreateDto)
@@ -191,6 +193,7 @@ public class PermisosController : ControllerBase
     /// Actualizar un permiso existente
     /// </summary>
     [HttpPut("{id}")]
+    [Authorize(Policy = "RequirePermission:permisos.actualizar")]
     [ProducesResponseType(typeof(PermisoResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -233,6 +236,7 @@ public class PermisosController : ControllerBase
     /// Eliminar un permiso (si no está asignado a ningún rol)
     /// </summary>
     [HttpDelete("{id}")]
+    [Authorize(Policy = "RequirePermission:permisos.eliminar")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

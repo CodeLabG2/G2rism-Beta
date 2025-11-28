@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using G2rismBeta.API.DTOs.Aerolinea;
 using G2rismBeta.API.Interfaces;
 using FluentValidation;
@@ -7,9 +8,11 @@ namespace G2rismBeta.API.Controllers;
 
 /// <summary>
 /// Controlador para la gestión de aerolíneas
+/// Requiere autenticación. Accesible para empleados (Super Admin, Admin, Empleado).
 /// </summary>
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "Super Administrador,Administrador,Empleado")]
 public class AerolineasController : ControllerBase
 {
     private readonly IAerolineaService _service;

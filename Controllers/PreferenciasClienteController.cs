@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using G2rismBeta.API.DTOs.PreferenciaCliente;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.Models;
@@ -8,9 +9,12 @@ namespace G2rismBeta.API.Controllers
     /// <summary>
     /// Controlador para gestionar las preferencias de clientes
     /// Proporciona endpoints para el módulo CRM de seguimiento y personalización
+    /// Requiere autenticación. Los clientes solo pueden ver/modificar sus propias preferencias.
+    /// Los empleados pueden gestionar las preferencias de cualquier cliente.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Todos los usuarios autenticados pueden acceder
     public class PreferenciasClienteController : ControllerBase
     {
         private readonly IPreferenciaClienteService _preferenciaClienteService;

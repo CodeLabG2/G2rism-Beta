@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.DTOs.ContratoProveedor;
 using G2rismBeta.API.Models;
@@ -8,9 +9,11 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador para gestión de Contratos con Proveedores
 /// Maneja la creación, consulta, actualización y gestión del ciclo de vida de contratos
+/// Requiere autenticación. Accesible para empleados (Super Admin, Admin, Empleado).
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Super Administrador,Administrador,Empleado")]
 public class ContratosProveedorController : ControllerBase
 {
     private readonly IContratoProveedorService _contratoService;

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.DTOs.Usuario;
@@ -7,12 +8,14 @@ using G2rismBeta.API.Models;
 
 namespace G2rismBeta.API.Controllers;
 
-/// <summary>   
+/// <summary>
 /// Controlador para la gestión de usuarios
+/// Requiere autenticación. Solo accesible para Super Administrador y Administrador.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
+[Authorize(Roles = "Super Administrador,Administrador")]
 public class UsuariosController : ControllerBase
 {
     private readonly IUsuarioService _usuarioService;

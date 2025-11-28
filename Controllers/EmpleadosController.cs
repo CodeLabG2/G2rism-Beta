@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using G2rismBeta.API.DTOs.Empleado;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.Models;
@@ -7,9 +8,11 @@ namespace G2rismBeta.API.Controllers
 {
     /// <summary>
     /// Controlador para la gestión de empleados y jerarquía organizacional
+    /// Requiere autenticación. Solo accesible para Super Administrador y Administrador.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Super Administrador,Administrador,Empleado")]
     public class EmpleadosController : ControllerBase
     {
         private readonly IEmpleadoService _empleadoService;

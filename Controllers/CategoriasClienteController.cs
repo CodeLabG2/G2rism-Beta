@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using G2rismBeta.API.DTOs.CategoriaCliente;
 using G2rismBeta.API.Interfaces;
 
@@ -7,9 +8,11 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador para la gestión de Categorías de Cliente (CRM)
 /// Endpoints para operaciones CRUD de categorías y segmentación de clientes
+/// Requiere autenticación. Accesible para empleados (Super Admin, Admin, Empleado).
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Super Administrador,Administrador,Empleado")]
 public class CategoriasClienteController : ControllerBase
 {
     private readonly ICategoriaClienteService _categoriaService;

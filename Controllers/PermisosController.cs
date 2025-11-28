@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using G2rismBeta.API.DTOs.Permiso;
 using G2rismBeta.API.Interfaces;
 
@@ -7,9 +8,11 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador para la gestión de Permisos
 /// Endpoints para operaciones CRUD de permisos
+/// Requiere autenticación. Solo accesible para Super Administrador y Administrador.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Super Administrador,Administrador")]
 public class PermisosController : ControllerBase
 {
     private readonly IPermisoService _permisoService;

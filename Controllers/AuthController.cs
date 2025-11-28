@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using AutoMapper;
 using G2rismBeta.API.Interfaces;
@@ -11,6 +12,7 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador de Autenticación
 /// Gestiona registro, login, logout y recuperación de contraseña
+/// Algunos endpoints son públicos ([AllowAnonymous]), otros requieren autenticación.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
@@ -40,6 +42,7 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Registrar un nuevo usuario en el sistema
+    /// Endpoint público - no requiere autenticación
     /// </summary>
     /// <param name="dto">Datos del nuevo usuario</param>
     /// <returns>Usuario registrado exitosamente</returns>
@@ -48,6 +51,7 @@ public class AuthController : ControllerBase
     /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("register")]
+    [AllowAnonymous]
     [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ApiResponse<RegisterResponseDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -128,6 +132,7 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Iniciar sesión en el sistema
+    /// Endpoint público - no requiere autenticación
     /// </summary>
     /// <param name="dto">Credenciales de acceso</param>
     /// <returns>Datos del usuario autenticado</returns>
@@ -137,6 +142,7 @@ public class AuthController : ControllerBase
     /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("login")]
+    [AllowAnonymous]
     [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -215,12 +221,15 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Cerrar sesión del sistema
+    /// Requiere autenticación - usuario debe estar logueado
     /// </summary>
     /// <param name="idUsuario">ID del usuario que cierra sesión</param>
     /// <returns>Confirmación de cierre de sesión</returns>
     /// <response code="200">Logout exitoso</response>
+    /// <response code="401">No autenticado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("logout")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<object>>> Logout([FromBody] int idUsuario)
@@ -247,6 +256,7 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Renovar access token usando refresh token
+    /// Endpoint público - no requiere autenticación (usa refresh token)
     /// </summary>
     /// <param name="dto">Refresh token válido</param>
     /// <returns>Nuevo access token y refresh token</returns>
@@ -255,6 +265,7 @@ public class AuthController : ControllerBase
     /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("refresh")]
+    [AllowAnonymous]
     [EnableRateLimiting("refresh")]
     [ProducesResponseType(typeof(ApiResponse<RefreshTokenResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
@@ -334,6 +345,7 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Solicitar recuperación de contraseña
     /// Se enviará un token al email registrado
+    /// Endpoint público - no requiere autenticación
     /// </summary>
     /// <param name="dto">Email del usuario</param>
     /// <returns>Confirmación de envío de token</returns>
@@ -342,6 +354,7 @@ public class AuthController : ControllerBase
     /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("recuperar-password")]
+    [AllowAnonymous]
     [EnableRateLimiting("password-recovery")]
     [ProducesResponseType(typeof(ApiResponse<RecuperarPasswordResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -405,6 +418,7 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Restablecer contraseña usando token de recuperación
+    /// Endpoint público - no requiere autenticación (usa token de recuperación)
     /// </summary>
     /// <param name="dto">Token y nueva contraseña</param>
     /// <returns>Confirmación de cambio de contraseña</returns>
@@ -413,6 +427,7 @@ public class AuthController : ControllerBase
     /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("reset-password")]
+    [AllowAnonymous]
     [EnableRateLimiting("password-recovery")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -480,14 +495,17 @@ public class AuthController : ControllerBase
 
     /// <summary>
     /// Cambiar contraseña estando autenticado
+    /// Requiere autenticación - usuario debe estar logueado
     /// Requiere la contraseña actual para validación
     /// </summary>
     /// <param name="dto">Contraseña actual y nueva contraseña</param>
     /// <returns>Confirmación de cambio de contraseña</returns>
     /// <response code="200">Contraseña cambiada exitosamente</response>
     /// <response code="400">Contraseña actual incorrecta</response>
+    /// <response code="401">No autenticado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("cambiar-password")]
+    [Authorize]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]

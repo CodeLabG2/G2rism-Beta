@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using G2rismBeta.API.DTOs.Proveedor;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.Models;
@@ -7,9 +8,11 @@ namespace G2rismBeta.API.Controllers
 {
     /// <summary>
     /// Controlador para la gestión de proveedores de servicios turísticos
+    /// Requiere autenticación. Accesible para empleados (Super Admin, Admin, Empleado).
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Super Administrador,Administrador,Empleado")]
     public class ProveedoresController : ControllerBase
     {
         private readonly IProveedorService _proveedorService;

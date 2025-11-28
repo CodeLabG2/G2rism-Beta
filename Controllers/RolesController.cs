@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using G2rismBeta.API.DTOs.Rol;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.DTOs.RolPermiso;
@@ -8,9 +9,11 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador para la gestión de Roles
 /// Endpoints para operaciones CRUD de roles y asignación de permisos
+/// Requiere autenticación. Solo accesible para Super Administrador y Administrador.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Super Administrador,Administrador")]
 public class RolesController : ControllerBase
 {
     private readonly IRolService _rolService;
@@ -261,18 +264,20 @@ public class RolesController : ControllerBase
 
     /// <summary>
     /// Eliminar un rol (si no tiene usuarios asignados)
+    /// Solo Super Administrador puede eliminar roles
     /// </summary>
     /// <param name="id">ID del rol a eliminar</param>
     /// <remarks>
     /// Ejemplo de request:
-    /// 
+    ///
     ///     DELETE /api/roles/5
-    /// 
+    ///
     /// </remarks>
     /// <response code="204">Rol eliminado exitosamente</response>
     /// <response code="404">Rol no encontrado</response>
     /// <response code="409">No se puede eliminar (tiene usuarios o es rol del sistema)</response>
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Super Administrador")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

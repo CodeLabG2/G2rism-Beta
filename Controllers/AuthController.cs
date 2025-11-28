@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using AutoMapper;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.DTOs.Auth;
@@ -44,10 +45,13 @@ public class AuthController : ControllerBase
     /// <returns>Usuario registrado exitosamente</returns>
     /// <response code="201">Usuario registrado exitosamente</response>
     /// <response code="400">Datos inválidos o usuario ya existe</response>
+    /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("register")]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ApiResponse<RegisterResponseDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<RegisterResponseDto>>> Register(
         [FromBody] RegisterRequestDto dto)
@@ -130,11 +134,14 @@ public class AuthController : ControllerBase
     /// <response code="200">Login exitoso</response>
     /// <response code="401">Credenciales inválidas</response>
     /// <response code="403">Cuenta bloqueada o inactiva</response>
+    /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<LoginResponseDto>>> Login(
         [FromBody] LoginRequestDto dto)
@@ -245,10 +252,13 @@ public class AuthController : ControllerBase
     /// <returns>Nuevo access token y refresh token</returns>
     /// <response code="200">Tokens renovados exitosamente</response>
     /// <response code="401">Refresh token inválido o expirado</response>
+    /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("refresh")]
+    [EnableRateLimiting("refresh")]
     [ProducesResponseType(typeof(ApiResponse<RefreshTokenResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<RefreshTokenResponseDto>>> RefreshToken(
         [FromBody] RefreshTokenRequestDto dto)
@@ -329,10 +339,13 @@ public class AuthController : ControllerBase
     /// <returns>Confirmación de envío de token</returns>
     /// <response code="200">Token enviado al email</response>
     /// <response code="404">Email no encontrado</response>
+    /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("recuperar-password")]
+    [EnableRateLimiting("password-recovery")]
     [ProducesResponseType(typeof(ApiResponse<RecuperarPasswordResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<RecuperarPasswordResponseDto>>> RecuperarPassword(
         [FromBody] RecuperarPasswordRequestDto dto)
@@ -397,10 +410,13 @@ public class AuthController : ControllerBase
     /// <returns>Confirmación de cambio de contraseña</returns>
     /// <response code="200">Contraseña cambiada exitosamente</response>
     /// <response code="400">Token inválido o contraseña débil</response>
+    /// <response code="429">Límite de solicitudes excedido</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("reset-password")]
+    [EnableRateLimiting("password-recovery")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<object>>> ResetPassword(
         [FromBody] ResetPasswordDto dto)
@@ -587,10 +603,10 @@ public class AuthController : ControllerBase
     /// </summary>
     [HttpGet("profile/{id}")]
     [ApiExplorerSettings(IgnoreApi = true)] // Ocultar de Swagger
-    public async Task<ActionResult> GetProfile(int id)
+    public Task<ActionResult> GetProfile(int id)
     {
         // Este endpoint es solo para completar el CreatedAtAction
         // En una implementación real, aquí iría la lógica para obtener el perfil
-        return Ok(new { Message = "Ver perfil en /api/usuarios/{id}" });
+        return Task.FromResult<ActionResult>(Ok(new { Message = "Ver perfil en /api/usuarios/{id}" }));
     }
 }

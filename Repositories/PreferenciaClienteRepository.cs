@@ -34,7 +34,7 @@ public class PreferenciaClienteRepository : GenericRepository<PreferenciaCliente
     {
         return await _dbSet
             .Include(p => p.Cliente)
-                .ThenInclude(c => c.Categoria)
+                .ThenInclude(c => c!.Categoria)
             .FirstOrDefaultAsync(p => p.IdPreferencia == idPreferencia);
     }
 
@@ -55,8 +55,8 @@ public class PreferenciaClienteRepository : GenericRepository<PreferenciaCliente
     {
         return await _dbSet
             .Include(p => p.Cliente)
-            .OrderBy(p => p.Cliente.Apellido)
-            .ThenBy(p => p.Cliente.Nombre)
+            .OrderBy(p => p.Cliente!.Apellido)
+            .ThenBy(p => p.Cliente!.Nombre)
             .ToListAsync();
     }
 
@@ -68,7 +68,7 @@ public class PreferenciaClienteRepository : GenericRepository<PreferenciaCliente
     {
         return await _dbSet
             .Include(p => p.Cliente)
-            .Where(p => p.TipoDestino.ToLower() == tipoDestino.ToLower())
+            .Where(p => p.TipoDestino!.ToLower() == tipoDestino.ToLower())
             .ToListAsync();
     }
 

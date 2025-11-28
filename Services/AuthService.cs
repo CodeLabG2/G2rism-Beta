@@ -17,6 +17,7 @@ public class AuthService : IAuthService
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly JwtTokenGenerator _jwtTokenGenerator;
     private readonly IConfiguration _configuration;
+    private readonly IEmailService _emailService;
 
     // Configuración de seguridad
     private const int MAX_INTENTOS_FALLIDOS = 5;
@@ -29,7 +30,8 @@ public class AuthService : IAuthService
         IRolRepository rolRepository,
         IRefreshTokenRepository refreshTokenRepository,
         JwtTokenGenerator jwtTokenGenerator,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IEmailService emailService)
     {
         _usuarioRepository = usuarioRepository;
         _usuarioRolRepository = usuarioRolRepository;
@@ -38,6 +40,7 @@ public class AuthService : IAuthService
         _refreshTokenRepository = refreshTokenRepository;
         _jwtTokenGenerator = jwtTokenGenerator;
         _configuration = configuration;
+        _emailService = emailService;
     }
 
     // ========================================
@@ -108,8 +111,9 @@ public class AuthService : IAuthService
             await _usuarioRolRepository.SaveChangesAsync();
         }
 
-        // 7. Enviar email de bienvenida (opcional)
-        await EmailHelper.EnviarEmailBienvenida(nuevoUsuario.Email, nuevoUsuario.Username);
+        // 7. Enviar email de bienvenida
+        var nombreCompleto = $"{nombre} {apellido}";
+        await _emailService.SendWelcomeEmailAsync(nuevoUsuario.Email, nuevoUsuario.Username, nombreCompleto);
 
         // 8. Retornar el usuario con sus roles
         return await _usuarioRepository.GetByIdWithRolesAsync(nuevoUsuario.IdUsuario)
@@ -370,8 +374,8 @@ public class AuthService : IAuthService
 
         await _tokenRepository.CrearTokenAsync(tokenRecuperacion);
 
-        // 4. Enviar email con el token y el link del frontend
-        await EmailHelper.EnviarEmailRecuperacion(usuario.Email, token, frontendUrl);
+        // 4. Enviar email con el token de recuperación
+        await _emailService.SendPasswordResetEmailAsync(usuario.Email, usuario.Username, token, frontendUrl);
 
         return token;
     }

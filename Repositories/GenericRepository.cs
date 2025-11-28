@@ -46,10 +46,10 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
     /// <summary>
     /// Actualizar una entidad existente
     /// </summary>
-    public virtual async Task<T> UpdateAsync(T entity)
+    public virtual Task<T> UpdateAsync(T entity)
     {
         _dbSet.Update(entity);
-        return entity;
+        return Task.FromResult(entity);
     }
 
     /// <summary>

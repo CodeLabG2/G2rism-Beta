@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Text;
+using System.Threading.RateLimiting;
 using G2rismBeta.API.Data;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.Repositories;
@@ -92,6 +94,7 @@ builder.Services.AddScoped<IPermisoService, PermisoService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtTokenGenerator>();
+builder.Services.AddScoped<IEmailService, SendGridEmailService>();
 
 // ========================================
 // REGISTRAR SERVICES - CLIENTES Y EMPLEADOS (CRM)
@@ -142,6 +145,88 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSettings["Audience"],
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero // No tolerancia para expiración
+    };
+});
+
+// ========================================
+// CONFIGURACIÓN DE RATE LIMITING
+// ========================================
+
+builder.Services.AddRateLimiter(options =>
+{
+    // Política para endpoints de autenticación (login, registro)
+    options.AddFixedWindowLimiter("auth", opt =>
+    {
+        opt.PermitLimit = 5; // 5 intentos
+        opt.Window = TimeSpan.FromMinutes(1); // por minuto
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0; // Sin cola, rechazar inmediatamente
+    });
+
+    // Política para recuperación de contraseña
+    options.AddFixedWindowLimiter("password-recovery", opt =>
+    {
+        opt.PermitLimit = 3; // 3 intentos
+        opt.Window = TimeSpan.FromHours(1); // por hora
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    // Política para refresh token
+    options.AddFixedWindowLimiter("refresh", opt =>
+    {
+        opt.PermitLimit = 10; // 10 renovaciones
+        opt.Window = TimeSpan.FromMinutes(1); // por minuto
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    // Política general para API (endpoints CRUD)
+    options.AddSlidingWindowLimiter("api", opt =>
+    {
+        opt.PermitLimit = 100; // 100 requests
+        opt.Window = TimeSpan.FromMinutes(1); // por minuto
+        opt.SegmentsPerWindow = 6; // 6 segmentos de 10 segundos
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 5; // Cola de 5 requests
+    });
+
+    // Limitador global basado en IP (protección general)
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new SlidingWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 200, // 200 requests totales
+                Window = TimeSpan.FromMinutes(1), // por minuto
+                SegmentsPerWindow = 6
+            }));
+
+    // Configurar respuesta cuando se excede el límite
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/json";
+
+        // Calcular tiempo de espera (Retry-After)
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter = retryAfter.TotalSeconds.ToString();
+        }
+
+        var response = new
+        {
+            success = false,
+            message = "Has excedido el límite de solicitudes. Por favor, intenta más tarde.",
+            statusCode = 429,
+            errorCode = "RateLimitExceeded",
+            timestamp = DateTime.UtcNow
+        };
+
+        await context.HttpContext.Response.WriteAsJsonAsync(response, cancellationToken);
     };
 });
 
@@ -255,6 +340,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+
+// Middleware de Rate Limiting (antes de autenticación)
+app.UseRateLimiter();
 
 // Middleware de autenticación (debe ir antes de autorización)
 app.UseAuthentication();

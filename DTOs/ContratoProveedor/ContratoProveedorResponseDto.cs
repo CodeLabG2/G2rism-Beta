@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace G2rismBeta.API.DTOs.ContratoProveedor;
 
 /// <summary>
@@ -33,13 +35,15 @@ public class ContratoProveedorResponseDto
     /// <summary>
     /// Fecha de inicio de vigencia del contrato
     /// </summary>
-    /// <example>2024-01-01T00:00:00</example>
+    /// <example>2024-01-01</example>
+    [DataType(DataType.Date)]
     public DateTime FechaInicio { get; set; }
 
     /// <summary>
     /// Fecha de finalización del contrato
     /// </summary>
-    /// <example>2025-12-31T23:59:59</example>
+    /// <example>2025-12-31</example>
+    [DataType(DataType.Date)]
     public DateTime FechaFin { get; set; }
 
     /// <summary>
@@ -93,7 +97,8 @@ public class ContratoProveedorResponseDto
     /// <summary>
     /// Fecha de creación del registro
     /// </summary>
-    /// <example>2024-01-01T10:30:00</example>
+    /// <example>2024-01-01</example>
+    [DataType(DataType.Date)]
     public DateTime FechaCreacion { get; set; }
 
     /// <summary>

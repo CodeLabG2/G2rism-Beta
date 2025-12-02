@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace G2rismBeta.API.DTOs.Cliente;
 
 /// <summary>
@@ -58,6 +60,7 @@ public class ClienteResponseDto
     /// Fecha de nacimiento
     /// </summary>
     /// <example>1990-05-15</example>
+    [DataType(DataType.Date)]
     public DateTime FechaNacimiento { get; set; }
 
     /// <summary>
@@ -99,7 +102,8 @@ public class ClienteResponseDto
     /// <summary>
     /// Fecha de registro
     /// </summary>
-    /// <example>2024-01-15T10:30:00</example>
+    /// <example>2024-01-15</example>
+    [DataType(DataType.Date)]
     public DateTime FechaRegistro { get; set; }
 
     /// <summary>

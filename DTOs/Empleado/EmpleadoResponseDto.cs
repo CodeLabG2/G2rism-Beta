@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace G2rismBeta.API.DTOs.Empleado;
 
 /// <summary>
@@ -69,6 +71,7 @@ public class EmpleadoResponseDto
     /// Fecha de nacimiento
     /// </summary>
     /// <example>1990-05-15</example>
+    [DataType(DataType.Date)]
     public DateTime FechaNacimiento { get; set; }
 
     /// <summary>
@@ -107,6 +110,7 @@ public class EmpleadoResponseDto
     /// Fecha de ingreso a la empresa
     /// </summary>
     /// <example>2024-01-15</example>
+    [DataType(DataType.Date)]
     public DateTime FechaIngreso { get; set; }
 
     /// <summary>

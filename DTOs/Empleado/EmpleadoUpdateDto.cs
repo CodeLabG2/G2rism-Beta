@@ -61,10 +61,11 @@ public class EmpleadoUpdateDto
     public string? TipoDocumento { get; set; }
 
     /// <summary>
-    /// Fecha de nacimiento del empleado (opcional)
+    /// Fecha de nacimiento del empleado (formato: YYYY-MM-DD) (opcional)
     /// Solo actualizar si hubo un error en el registro
     /// </summary>
     /// <example>1990-05-15</example>
+    [DataType(DataType.Date)]
     public DateTime? FechaNacimiento { get; set; }
 
     #endregion
@@ -101,10 +102,11 @@ public class EmpleadoUpdateDto
     public string? Cargo { get; set; }
 
     /// <summary>
-    /// Fecha de ingreso a la empresa (opcional)
+    /// Fecha de ingreso a la empresa (formato: YYYY-MM-DD) (opcional)
     /// Solo actualizar si hubo un error en el registro
     /// </summary>
     /// <example>2024-01-15</example>
+    [DataType(DataType.Date)]
     public DateTime? FechaIngreso { get; set; }
 
     /// <summary>

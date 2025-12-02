@@ -55,10 +55,11 @@ public class ClienteCreateDto
     public string TipoDocumento { get; set; } = string.Empty;
 
     /// <summary>
-    /// Fecha de nacimiento
+    /// Fecha de nacimiento (formato: YYYY-MM-DD)
     /// </summary>
     /// <example>1990-05-15</example>
     [Required(ErrorMessage = "La fecha de nacimiento es obligatoria")]
+    [DataType(DataType.Date)]
     public DateTime FechaNacimiento { get; set; }
 
     /// <summary>

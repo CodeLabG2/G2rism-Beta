@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace G2rismBeta.API.DTOs.PreferenciaCliente;
 
 /// <summary>
@@ -57,6 +59,7 @@ public class PreferenciaClienteResponseDto
     /// <summary>
     /// Fecha de última actualización
     /// </summary>
-    /// <example>2025-11-07T10:00:00</example>
+    /// <example>2025-11-07</example>
+    [DataType(DataType.Date)]
     public DateTime FechaActualizacion { get; set; }
 }

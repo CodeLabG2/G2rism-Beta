@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace G2rismBeta.API.DTOs.Aerolinea;
 
 /// <summary>
@@ -58,11 +60,13 @@ public class AerolineaResponseDto
     /// <summary>
     /// Fecha de creación del registro
     /// </summary>
+    [DataType(DataType.Date)]
     public DateTime FechaCreacion { get; set; }
 
     /// <summary>
     /// Fecha de última modificación
     /// </summary>
+    [DataType(DataType.Date)]
     public DateTime? FechaModificacion { get; set; }
 
     // ===================================

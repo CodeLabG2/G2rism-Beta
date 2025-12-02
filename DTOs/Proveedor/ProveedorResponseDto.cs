@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace G2rismBeta.API.DTOs.Proveedor;
 
 /// <summary>
@@ -99,7 +101,8 @@ public class ProveedorResponseDto
     /// <summary>
     /// Fecha de registro del proveedor en el sistema
     /// </summary>
-    /// <example>2024-01-15T10:30:00</example>
+    /// <example>2024-01-15</example>
+    [DataType(DataType.Date)]
     public DateTime FechaRegistro { get; set; }
 
     /// <summary>

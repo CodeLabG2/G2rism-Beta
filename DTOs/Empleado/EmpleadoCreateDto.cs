@@ -65,11 +65,12 @@ public class EmpleadoCreateDto
     public string TipoDocumento { get; set; } = string.Empty;
 
     /// <summary>
-    /// Fecha de nacimiento del empleado
+    /// Fecha de nacimiento del empleado (formato: YYYY-MM-DD)
     /// Debe ser mayor de edad (18 años) y menor de 100 años
     /// </summary>
     /// <example>1990-05-15</example>
     [Required(ErrorMessage = "La fecha de nacimiento es obligatoria")]
+    [DataType(DataType.Date)]
     public DateTime FechaNacimiento { get; set; }
 
     #endregion
@@ -109,11 +110,12 @@ public class EmpleadoCreateDto
     public string Cargo { get; set; } = string.Empty;
 
     /// <summary>
-    /// Fecha de ingreso a la empresa
+    /// Fecha de ingreso a la empresa (formato: YYYY-MM-DD)
     /// No puede ser fecha futura
     /// </summary>
     /// <example>2024-01-15</example>
     [Required(ErrorMessage = "La fecha de ingreso es obligatoria")]
+    [DataType(DataType.Date)]
     public DateTime FechaIngreso { get; set; }
 
     /// <summary>

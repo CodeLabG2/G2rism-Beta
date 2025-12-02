@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace G2rismBeta.API.DTOs.Usuario;
 
 /// <summary>
@@ -32,7 +34,8 @@ public class UsuarioResponseDto
     /// <summary>
     /// Fecha y hora del último acceso
     /// </summary>
-    /// <example>2025-10-31T10:30:00</example>
+    /// <example>2025-10-31</example>
+    [DataType(DataType.Date)]
     public DateTime? UltimoAcceso { get; set; }
 
     /// <summary>
@@ -56,12 +59,14 @@ public class UsuarioResponseDto
     /// <summary>
     /// Fecha de creación del usuario
     /// </summary>
-    /// <example>2025-10-01T08:00:00</example>
+    /// <example>2025-10-01</example>
+    [DataType(DataType.Date)]
     public DateTime FechaCreacion { get; set; }
 
     /// <summary>
     /// Fecha de última modificación
     /// </summary>
-    /// <example>2025-10-31T15:45:00</example>
+    /// <example>2025-10-31</example>
+    [DataType(DataType.Date)]
     public DateTime? FechaModificacion { get; set; }
 }

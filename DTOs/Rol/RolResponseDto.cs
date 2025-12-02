@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace G2rismBeta.API.DTOs.Rol;
 
 /// <summary>
@@ -39,13 +41,15 @@ public class RolResponseDto
     /// <summary>
     /// Fecha de creación
     /// </summary>
-    /// <example>2025-10-28T10:30:00</example>
+    /// <example>2025-10-28</example>
+    [DataType(DataType.Date)]
     public DateTime FechaCreacion { get; set; }
 
     /// <summary>
     /// Fecha de última modificación
     /// </summary>
-    /// <example>2025-10-28T15:45:00</example>
+    /// <example>2025-10-28</example>
+    [DataType(DataType.Date)]
     public DateTime? FechaModificacion { get; set; }
 
     /// <summary>

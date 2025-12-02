@@ -23,17 +23,20 @@ public class AuthController : ControllerBase
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<AuthController> _logger;
+    private readonly IConfiguration _configuration;
 
     public AuthController(
         IAuthService authService,
         IUsuarioRepository usuarioRepository,
         IMapper mapper,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        IConfiguration configuration)
     {
         _authService = authService;
         _usuarioRepository = usuarioRepository;
         _mapper = mapper;
         _logger = logger;
+        _configuration = configuration;
     }
 
     // ========================================
@@ -185,9 +188,15 @@ public class AuthController : ControllerBase
             // Mapear a DTO de respuesta
             var responseDto = _mapper.Map<LoginResponseDto>(usuario);
 
-            // Agregar tokens JWT al response
+            // Obtener duración del token desde configuración
+            var expirationMinutes = int.Parse(_configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60");
+
+            // Agregar tokens JWT al response con múltiples formatos de fecha
             responseDto.Token = accessToken;
-            responseDto.TokenExpiration = expiration;
+            responseDto.ExpiresIn = expirationMinutes * 60; // Convertir minutos a segundos
+            responseDto.TokenExpiration = expiration; // UTC
+            responseDto.TokenExpirationLocal = expiration.ToLocalTime(); // Hora local del servidor
+            responseDto.TimeZone = TimeZoneInfo.Local.Id; // Zona horaria del servidor
             responseDto.RefreshToken = refreshToken;
 
             var response = new ApiResponse<LoginResponseDto>
@@ -294,11 +303,17 @@ public class AuthController : ControllerBase
             var userId = int.Parse(jwtToken.Claims.First(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier).Value);
             var username = jwtToken.Claims.First(c => c.Type == System.Security.Claims.ClaimTypes.Name).Value;
 
+            // Obtener duración del token desde configuración
+            var expirationMinutes = int.Parse(_configuration["Jwt:AccessTokenExpirationMinutes"] ?? "60");
+
             var responseDto = new RefreshTokenResponseDto
             {
                 AccessToken = newAccessToken,
                 RefreshToken = newRefreshToken,
-                TokenExpiration = expiration,
+                ExpiresIn = expirationMinutes * 60, // Convertir minutos a segundos
+                TokenExpiration = expiration, // UTC
+                TokenExpirationLocal = expiration.ToLocalTime(), // Hora local del servidor
+                TimeZone = TimeZoneInfo.Local.Id, // Zona horaria del servidor
                 IdUsuario = userId,
                 Username = username
             };

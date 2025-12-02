@@ -26,10 +26,28 @@ public class LoginResponseDto
     public string? Token { get; set; }
 
     /// <summary>
-    /// Fecha de expiración del access token
+    /// Tiempo en segundos hasta que expire el access token (estándar OAuth 2.0)
     /// </summary>
-    /// <example>2025-11-26T12:00:00</example>
+    /// <example>3600</example>
+    public int ExpiresIn { get; set; }
+
+    /// <summary>
+    /// Fecha y hora de expiración del access token en UTC
+    /// </summary>
+    /// <example>2025-11-26T12:00:00Z</example>
     public DateTime? TokenExpiration { get; set; }
+
+    /// <summary>
+    /// Fecha y hora de expiración del access token en hora local del servidor
+    /// </summary>
+    /// <example>2025-11-26T07:00:00</example>
+    public DateTime? TokenExpirationLocal { get; set; }
+
+    /// <summary>
+    /// Zona horaria del servidor (para referencia)
+    /// </summary>
+    /// <example>SA Pacific Standard Time</example>
+    public string? TimeZone { get; set; }
 
     /// <summary>
     /// Refresh token para renovar el access token

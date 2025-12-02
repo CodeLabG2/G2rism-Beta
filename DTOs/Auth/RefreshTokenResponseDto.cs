@@ -16,9 +16,25 @@ namespace G2rismBeta.API.DTOs.Auth
         public string RefreshToken { get; set; } = string.Empty;
 
         /// <summary>
-        /// Fecha de expiración del nuevo access token
+        /// Tiempo en segundos hasta que expire el access token (estándar OAuth 2.0)
+        /// </summary>
+        /// <example>3600</example>
+        public int ExpiresIn { get; set; }
+
+        /// <summary>
+        /// Fecha de expiración del nuevo access token en UTC
         /// </summary>
         public DateTime TokenExpiration { get; set; }
+
+        /// <summary>
+        /// Fecha de expiración del nuevo access token en hora local del servidor
+        /// </summary>
+        public DateTime TokenExpirationLocal { get; set; }
+
+        /// <summary>
+        /// Zona horaria del servidor
+        /// </summary>
+        public string TimeZone { get; set; } = string.Empty;
 
         /// <summary>
         /// ID del usuario

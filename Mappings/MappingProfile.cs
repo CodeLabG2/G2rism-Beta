@@ -183,7 +183,17 @@ public class MappingProfile : Profile
         // Modelo → ClienteConCategoriaDto (incluye detalles completos de categoría)
         CreateMap<Cliente, ClienteConCategoriaDto>()
             .ForMember(dest => dest.Cliente, opt => opt.MapFrom(src => src))
-            .ForMember(dest => dest.Categoria, opt => opt.MapFrom(src => src.Categoria));
+            .ForMember(dest => dest.Categoria, opt => opt.MapFrom(src => src.Categoria != null ? new ClienteConCategoriaDto.CategoriaInfo
+            {
+                IdCategoria = src.Categoria.IdCategoria,
+                Nombre = src.Categoria.Nombre,
+                ColorHex = src.Categoria.ColorHex,
+                DescuentoPorcentaje = src.Categoria.DescuentoPorcentaje,
+                Beneficios = src.Categoria.Beneficios
+            } : null));
+
+        // CategoriaCliente → ClienteConCategoriaDto.CategoriaInfo (mapeo auxiliar)
+        CreateMap<CategoriaCliente, ClienteConCategoriaDto.CategoriaInfo>();
 
         // ========================================
         // MAPEOS PARA PREFERENCIA CLIENTE (CRM)

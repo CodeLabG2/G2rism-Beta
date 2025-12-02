@@ -250,6 +250,7 @@ public class ContratosProveedorController : ControllerBase
     /// <returns>Confirmación de eliminación</returns>
     [HttpDelete("{id}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> DeleteContrato(int id)
     {
@@ -276,6 +277,24 @@ public class ContratosProveedorController : ControllerBase
                 Success = true,
                 Message = "Contrato eliminado exitosamente",
                 Data = new { IdContrato = id, Eliminado = true }
+            });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning("⚠️ Contrato no encontrado: {Message}", ex.Message);
+            return NotFound(new ApiErrorResponse
+            {
+                Message = ex.Message,
+                StatusCode = 404,
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning("⚠️ Operación no permitida: {Message}", ex.Message);
+            return BadRequest(new ApiErrorResponse
+            {
+                Message = ex.Message,
+                StatusCode = 400,
             });
         }
         catch (Exception ex)
@@ -373,10 +392,11 @@ public class ContratosProveedorController : ControllerBase
     /// <summary>
     /// Obtener contratos por estado
     /// </summary>
-    /// <param name="estado">Estado del contrato</param>
+    /// <param name="estado">Estado del contrato (Vigente, Vencido, Cancelado, En_Negociacion)</param>
     /// <returns>Lista de contratos con el estado especificado</returns>
     [HttpGet("estado/{estado}")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ContratoProveedorResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<IEnumerable<ContratoProveedorResponseDto>>>> GetContratosByEstado(string estado)
     {
         try
@@ -390,6 +410,15 @@ public class ContratosProveedorController : ControllerBase
                 Success = true,
                 Message = $"Contratos con estado '{estado}' obtenidos exitosamente",
                 Data = contratos
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning("⚠️ Estado inválido: {Message}", ex.Message);
+            return BadRequest(new ApiErrorResponse
+            {
+                Message = ex.Message,
+                StatusCode = 400,
             });
         }
         catch (Exception ex)
@@ -537,10 +566,11 @@ public class ContratosProveedorController : ControllerBase
     /// Obtener contratos de un proveedor en estado específico
     /// </summary>
     /// <param name="idProveedor">ID del proveedor</param>
-    /// <param name="estado">Estado del contrato</param>
+    /// <param name="estado">Estado del contrato (Vigente, Vencido, Cancelado, En_Negociacion)</param>
     /// <returns>Lista de contratos filtrados</returns>
     [HttpGet("proveedor/{idProveedor}/estado/{estado}")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ContratoProveedorResponseDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<IEnumerable<ContratoProveedorResponseDto>>>> GetContratosByProveedorYEstado(
         int idProveedor,
         string estado)
@@ -557,6 +587,15 @@ public class ContratosProveedorController : ControllerBase
                 Success = true,
                 Message = $"Contratos del proveedor con estado '{estado}' obtenidos exitosamente",
                 Data = contratos
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning("⚠️ Estado inválido: {Message}", ex.Message);
+            return BadRequest(new ApiErrorResponse
+            {
+                Message = ex.Message,
+                StatusCode = 400,
             });
         }
         catch (Exception ex)

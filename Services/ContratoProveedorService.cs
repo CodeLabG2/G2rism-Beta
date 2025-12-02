@@ -83,12 +83,9 @@ public class ContratoProveedorService : IContratoProveedorService
             throw new ArgumentException("La fecha de fin debe ser posterior a la fecha de inicio");
         }
 
-        // Validación 5: Estado válido
-        var estadosValidos = new[] { "Vigente", "Vencido", "Cancelado", "En_Negociacion" };
-        if (!estadosValidos.Contains(dto.Estado))
-        {
-            throw new ArgumentException($"Estado '{dto.Estado}' no es válido. Valores permitidos: {string.Join(", ", estadosValidos)}");
-        }
+        // Validación 5: Estado válido (normalizado)
+        var estadoNormalizado = ValidarYNormalizarEstado(dto.Estado);
+        dto.Estado = estadoNormalizado;
 
         // Validación 6: Valor del contrato positivo
         if (dto.ValorContrato < 0)
@@ -101,6 +98,7 @@ public class ContratoProveedorService : IContratoProveedorService
         contrato.FechaCreacion = DateTime.Now;
 
         var contratoCreado = await _contratoRepository.AddAsync(contrato);
+        await _contratoRepository.SaveChangesAsync();
 
         _logger.LogInformation($"Contrato creado exitosamente: {contratoCreado.NumeroContrato} (ID: {contratoCreado.IdContrato})");
 
@@ -137,15 +135,11 @@ public class ContratoProveedorService : IContratoProveedorService
             throw new ArgumentException("La fecha de fin debe ser posterior a la fecha de inicio");
         }
 
-        // Validación 3: Estado válido
+        // Validación 3: Estado válido (normalizado)
         if (!string.IsNullOrWhiteSpace(dto.Estado))
         {
-            var estadosValidos = new[] { "Vigente", "Vencido", "Cancelado", "En_Negociacion" };
-            if (!estadosValidos.Contains(dto.Estado))
-            {
-                throw new ArgumentException($"Estado '{dto.Estado}' no es válido");
-            }
-            contratoExistente.Estado = dto.Estado;
+            var estadoNormalizado = ValidarYNormalizarEstado(dto.Estado);
+            contratoExistente.Estado = estadoNormalizado;
         }
 
         // Validación 4: Valor del contrato
@@ -184,6 +178,7 @@ public class ContratoProveedorService : IContratoProveedorService
             contratoExistente.Observaciones = dto.Observaciones;
 
         await _contratoRepository.UpdateAsync(contratoExistente);
+        await _contratoRepository.SaveChangesAsync();
 
         _logger.LogInformation($"Contrato actualizado exitosamente: ID {id}");
 
@@ -209,6 +204,7 @@ public class ContratoProveedorService : IContratoProveedorService
         }
 
         await _contratoRepository.DeleteAsync(id);
+        await _contratoRepository.SaveChangesAsync();
 
         _logger.LogInformation($"Contrato eliminado exitosamente: ID {id}");
 
@@ -245,13 +241,8 @@ public class ContratoProveedorService : IContratoProveedorService
     /// </summary>
     public async Task<IEnumerable<ContratoProveedorResponseDto>> GetByEstadoAsync(string estado)
     {
-        var estadosValidos = new[] { "Vigente", "Vencido", "Cancelado", "En_Negociacion" };
-        if (!estadosValidos.Contains(estado))
-        {
-            throw new ArgumentException($"Estado '{estado}' no es válido. Valores permitidos: {string.Join(", ", estadosValidos)}");
-        }
-
-        var contratos = await _contratoRepository.GetByEstadoAsync(estado);
+        var estadoNormalizado = ValidarYNormalizarEstado(estado);
+        var contratos = await _contratoRepository.GetByEstadoAsync(estadoNormalizado);
         return contratos.Select(MapToResponseDto);
     }
 
@@ -311,14 +302,10 @@ public class ContratoProveedorService : IContratoProveedorService
             throw new KeyNotFoundException($"Contrato con ID {id} no encontrado");
         }
 
-        var estadosValidos = new[] { "Vigente", "Vencido", "Cancelado", "En_Negociacion" };
-        if (!estadosValidos.Contains(nuevoEstado))
-        {
-            throw new ArgumentException($"Estado '{nuevoEstado}' no es válido. Valores permitidos: {string.Join(", ", estadosValidos)}");
-        }
+        var estadoNormalizado = ValidarYNormalizarEstado(nuevoEstado);
 
         // Validación: No permitir cambiar a Vigente si las fechas no lo permiten
-        if (nuevoEstado == "Vigente")
+        if (estadoNormalizado == "Vigente")
         {
             var hoy = DateTime.Now.Date;
             if (contrato.FechaInicio.Date > hoy || contrato.FechaFin.Date < hoy)
@@ -328,10 +315,11 @@ public class ContratoProveedorService : IContratoProveedorService
             }
         }
 
-        contrato.Estado = nuevoEstado;
+        contrato.Estado = estadoNormalizado;
         await _contratoRepository.UpdateAsync(contrato);
+        await _contratoRepository.SaveChangesAsync();
 
-        _logger.LogInformation($"Estado del contrato ID {id} cambiado a: {nuevoEstado}");
+        _logger.LogInformation($"Estado del contrato ID {id} cambiado a: {estadoNormalizado}");
 
         return MapToResponseDto(contrato);
     }
@@ -361,6 +349,7 @@ public class ContratoProveedorService : IContratoProveedorService
 
         contrato.FechaFin = nuevaFechaFin;
         await _contratoRepository.UpdateAsync(contrato);
+        await _contratoRepository.SaveChangesAsync();
 
         _logger.LogInformation($"Contrato ID {id} renovado hasta {nuevaFechaFin:yyyy-MM-dd}");
 
@@ -390,6 +379,7 @@ public class ContratoProveedorService : IContratoProveedorService
             : $"{contrato.Observaciones}\nCancelado: {motivo}";
 
         await _contratoRepository.UpdateAsync(contrato);
+        await _contratoRepository.SaveChangesAsync();
 
         _logger.LogInformation($"Contrato ID {id} cancelado. Motivo: {motivo}");
 
@@ -421,19 +411,33 @@ public class ContratoProveedorService : IContratoProveedorService
     /// </summary>
     public async Task<IEnumerable<ContratoProveedorResponseDto>> GetByProveedorYEstadoAsync(int idProveedor, string estado)
     {
-        var estadosValidos = new[] { "Vigente", "Vencido", "Cancelado", "En_Negociacion" };
-        if (!estadosValidos.Contains(estado))
-        {
-            throw new ArgumentException($"Estado '{estado}' no es válido");
-        }
-
-        var contratos = await _contratoRepository.GetByProveedorYEstadoAsync(idProveedor, estado);
+        var estadoNormalizado = ValidarYNormalizarEstado(estado);
+        var contratos = await _contratoRepository.GetByProveedorYEstadoAsync(idProveedor, estadoNormalizado);
         return contratos.Select(MapToResponseDto);
     }
 
     // ========================================
-    // MÉTODO AUXILIAR DE MAPEO
+    // MÉTODOS AUXILIARES
     // ========================================
+
+    /// <summary>
+    /// Validar y normalizar el estado del contrato (case-insensitive)
+    /// </summary>
+    private string ValidarYNormalizarEstado(string estado)
+    {
+        var estadosValidos = new[] { "Vigente", "Vencido", "Cancelado", "En_Negociacion" };
+
+        // Buscar coincidencia case-insensitive
+        var estadoNormalizado = estadosValidos.FirstOrDefault(e =>
+            string.Equals(e, estado, StringComparison.OrdinalIgnoreCase));
+
+        if (estadoNormalizado == null)
+        {
+            throw new ArgumentException($"Estado '{estado}' no es válido. Valores permitidos: {string.Join(", ", estadosValidos)}");
+        }
+
+        return estadoNormalizado;
+    }
 
     /// <summary>
     /// Mapear ContratoProveedor a ContratoProveedorResponseDto incluyendo propiedades calculadas

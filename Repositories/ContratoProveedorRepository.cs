@@ -16,6 +16,31 @@ public class ContratoProveedorRepository : GenericRepository<ContratoProveedor>,
     }
 
     // ========================================
+    // OVERRIDE DE MÉTODOS BASE
+    // ========================================
+
+    /// <summary>
+    /// Obtener un contrato por ID con eager loading del proveedor
+    /// </summary>
+    public override async Task<ContratoProveedor?> GetByIdAsync(int id)
+    {
+        return await _context.ContratosProveedor
+            .Include(c => c.Proveedor)
+            .FirstOrDefaultAsync(c => c.IdContrato == id);
+    }
+
+    /// <summary>
+    /// Obtener todos los contratos con eager loading del proveedor
+    /// </summary>
+    public override async Task<IEnumerable<ContratoProveedor>> GetAllAsync()
+    {
+        return await _context.ContratosProveedor
+            .Include(c => c.Proveedor)
+            .OrderByDescending(c => c.FechaCreacion)
+            .ToListAsync();
+    }
+
+    // ========================================
     // BÚSQUEDAS BÁSICAS
     // ========================================
 
@@ -91,7 +116,7 @@ public class ContratoProveedorRepository : GenericRepository<ContratoProveedor>,
     }
 
     /// <summary>
-    /// Obtener contratos vencidos
+    /// Obtener contratos vencidos (fecha de fin anterior a hoy, excluyendo cancelados)
     /// </summary>
     public async Task<IEnumerable<ContratoProveedor>> GetVencidosAsync()
     {
@@ -100,7 +125,7 @@ public class ContratoProveedorRepository : GenericRepository<ContratoProveedor>,
         return await _context.ContratosProveedor
             .Include(c => c.Proveedor)
             .Where(c => c.FechaFin.Date < hoy &&
-                       (c.Estado == "Vigente" || c.Estado == "Vencido"))
+                       c.Estado != "Cancelado")
             .OrderByDescending(c => c.FechaFin)
             .ToListAsync();
     }

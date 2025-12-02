@@ -1,36 +1,23 @@
 using FluentValidation;
 using G2rismBeta.API.DTOs.ContratoProveedor;
-using G2rismBeta.API.Interfaces;
 
 namespace G2rismBeta.API.Validators;
 
 /// <summary>
 /// Validador para la creación de contratos de proveedor
-/// Implementa validaciones sincrónicas y asincrónicas
+/// Implementa validaciones estructurales síncronas
+/// Las validaciones que requieren acceso a BD se realizan en el servicio
 /// </summary>
 public class ContratoProveedorCreateDtoValidator : AbstractValidator<ContratoProveedorCreateDto>
 {
-    private readonly IContratoProveedorRepository _contratoRepository;
-    private readonly IProveedorRepository _proveedorRepository;
-
-    public ContratoProveedorCreateDtoValidator(
-        IContratoProveedorRepository contratoRepository,
-        IProveedorRepository proveedorRepository)
+    public ContratoProveedorCreateDtoValidator()
     {
-        _contratoRepository = contratoRepository;
-        _proveedorRepository = proveedorRepository;
-
         // ========================================
         // VALIDACIONES DE PROVEEDOR
         // ========================================
         RuleFor(x => x.IdProveedor)
-            .GreaterThan(0).WithMessage("El ID del proveedor debe ser mayor a 0")
-            .MustAsync(async (idProveedor, cancellation) =>
-            {
-                var proveedor = await _proveedorRepository.GetByIdAsync(idProveedor);
-                return proveedor != null;
-            })
-            .WithMessage("El proveedor especificado no existe");
+            .GreaterThan(0).WithMessage("El ID del proveedor debe ser mayor a 0");
+        // Nota: La validación de existencia del proveedor se hace en el servicio
 
         // ========================================
         // VALIDACIONES DE NÚMERO DE CONTRATO
@@ -39,12 +26,8 @@ public class ContratoProveedorCreateDtoValidator : AbstractValidator<ContratoPro
             .NotEmpty().WithMessage("El número de contrato es obligatorio")
             .Length(3, 50).WithMessage("El número de contrato debe tener entre 3 y 50 caracteres")
             .Matches(@"^[a-zA-Z0-9\-]+$")
-            .WithMessage("El número de contrato solo debe contener letras, números y guiones")
-            .MustAsync(async (numeroContrato, cancellation) =>
-            {
-                return !await _contratoRepository.ExisteNumeroContratoAsync(numeroContrato);
-            })
-            .WithMessage("Ya existe un contrato con este número");
+            .WithMessage("El número de contrato solo debe contener letras, números y guiones");
+        // Nota: La validación de unicidad se hace en el servicio
 
         // ========================================
         // VALIDACIONES DE FECHAS

@@ -58,6 +58,18 @@ public class Permiso
     [Column("estado")]
     public bool Estado { get; set; } = true;
 
+    /// <summary>
+    /// Fecha y hora de creación del permiso
+    /// </summary>
+    [Column("fecha_creacion")]
+    public DateTime FechaCreacion { get; set; } = DateTime.Now;
+
+    /// <summary>
+    /// Fecha y hora de la última modificación del permiso
+    /// </summary>
+    [Column("fecha_modificacion")]
+    public DateTime? FechaModificacion { get; set; }
+
     // ========================================
     // RELACIONES DE NAVEGACIÓN
     // ========================================

@@ -16,6 +16,10 @@ public interface IPermisoService
     Task<PermisoResponseDto> UpdatePermisoAsync(int idPermiso, PermisoUpdateDto permisoUpdateDto);
     Task<bool> DeletePermisoAsync(int idPermiso);
 
+    // Búsquedas específicas
+    Task<PermisoResponseDto?> GetPermisoByModuloYAccionAsync(string modulo, string accion);
+    Task<IEnumerable<PermisoResponseDto>> BuscarPermisosAsync(string termino);
+
     // Operaciones especiales
     Task<bool> CambiarEstadoPermisoAsync(int idPermiso, bool nuevoEstado);
     Task<IEnumerable<string>> GetModulosAsync();

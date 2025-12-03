@@ -132,6 +132,67 @@ public class PermisosController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Buscar un permiso por módulo y acción
+    /// </summary>
+    /// <param name="modulo">Nombre del módulo</param>
+    /// <param name="accion">Nombre de la acción</param>
+    /// <returns>El permiso encontrado o 404 si no existe</returns>
+    [HttpGet("modulo/{modulo}/accion/{accion}")]
+    [ProducesResponseType(typeof(PermisoResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PermisoResponseDto>> GetPermisoByModuloYAccion(string modulo, string accion)
+    {
+        try
+        {
+            var permiso = await _permisoService.GetPermisoByModuloYAccionAsync(modulo, accion);
+
+            if (permiso == null)
+            {
+                return NotFound(new { message = $"No se encontró el permiso '{modulo}.{accion}'" });
+            }
+
+            return Ok(permiso);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error al buscar el permiso", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Buscar permisos por término (busca en módulo, acción, nombre y descripción)
+    /// </summary>
+    /// <param name="termino">Término de búsqueda</param>
+    /// <returns>Lista de permisos que coinciden con el término</returns>
+    [HttpGet("buscar")]
+    [ProducesResponseType(typeof(IEnumerable<PermisoResponseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<PermisoResponseDto>>> BuscarPermisos([FromQuery] string termino)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(termino))
+            {
+                return BadRequest(new { message = "El término de búsqueda es obligatorio" });
+            }
+
+            var permisos = await _permisoService.BuscarPermisosAsync(termino);
+            return Ok(new { termino, cantidad = permisos.Count(), permisos });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Error al buscar permisos", error = ex.Message });
+        }
+    }
+
     // ========================================
     // ENDPOINTS DE CREACIÓN (POST)
     // ========================================

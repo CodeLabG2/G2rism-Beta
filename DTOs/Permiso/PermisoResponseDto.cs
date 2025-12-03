@@ -46,4 +46,16 @@ public class PermisoResponseDto
     /// </summary>
     /// <example>3</example>
     public int CantidadRoles { get; set; }
+
+    /// <summary>
+    /// Fecha y hora de creación del permiso
+    /// </summary>
+    /// <example>2024-01-15T10:30:00</example>
+    public DateTime FechaCreacion { get; set; }
+
+    /// <summary>
+    /// Fecha y hora de la última modificación del permiso
+    /// </summary>
+    /// <example>2024-01-20T15:45:00</example>
+    public DateTime? FechaModificacion { get; set; }
 }

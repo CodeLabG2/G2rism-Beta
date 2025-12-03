@@ -87,7 +87,6 @@ public class PermisoService : IPermisoService
 
         // 2. Generar nombre del permiso automáticamente
         var nombrePermiso = $"{permisoCreateDto.Modulo.ToLower()}.{permisoCreateDto.Accion.ToLower()}";
-        permisoCreateDto.NombrePermiso = nombrePermiso;
 
         // 3. Validar que no exista
         var nombreExiste = await _permisoRepository.ExisteNombrePermisoAsync(nombrePermiso);
@@ -101,6 +100,7 @@ public class PermisoService : IPermisoService
         // ========================================
 
         var nuevoPermiso = _mapper.Map<Permiso>(permisoCreateDto);
+        nuevoPermiso.NombrePermiso = nombrePermiso;
         nuevoPermiso.Estado = true;
 
         var permisoCreado = await _permisoRepository.AddAsync(nuevoPermiso);
@@ -121,34 +121,47 @@ public class PermisoService : IPermisoService
             throw new KeyNotFoundException($"No se encontró el permiso con ID {idPermiso}");
         }
 
-        if (string.IsNullOrWhiteSpace(permisoUpdateDto.Modulo))
-        {
-            throw new ArgumentException("El módulo es obligatorio");
-        }
-
-        if (string.IsNullOrWhiteSpace(permisoUpdateDto.Accion))
-        {
-            throw new ArgumentException("La acción es obligatoria");
-        }
-
-        // Regenerar nombre del permiso
-        var nuevoNombrePermiso = $"{permisoUpdateDto.Modulo.ToLower()}.{permisoUpdateDto.Accion.ToLower()}";
-
-        // Validar que el nuevo nombre no exista (excluyendo el actual)
-        var nombreExiste = await _permisoRepository.ExisteNombrePermisoAsync(nuevoNombrePermiso, idPermiso);
-        if (nombreExiste)
-        {
-            throw new InvalidOperationException($"Ya existe otro permiso con el nombre '{nuevoNombrePermiso}'");
-        }
-
         // ========================================
-        // ACTUALIZAR
+        // ACTUALIZAR (soporta actualizaciones parciales)
         // ========================================
 
-        permisoExistente.Modulo = permisoUpdateDto.Modulo;
-        permisoExistente.Accion = permisoUpdateDto.Accion;
-        permisoExistente.NombrePermiso = nuevoNombrePermiso;
-        permisoExistente.Descripcion = permisoUpdateDto.Descripcion;
+        // Actualizar solo los campos proporcionados
+        if (!string.IsNullOrWhiteSpace(permisoUpdateDto.Modulo))
+        {
+            permisoExistente.Modulo = permisoUpdateDto.Modulo;
+        }
+
+        if (!string.IsNullOrWhiteSpace(permisoUpdateDto.Accion))
+        {
+            permisoExistente.Accion = permisoUpdateDto.Accion;
+        }
+
+        // Si se actualizó módulo o acción, regenerar NombrePermiso
+        if (!string.IsNullOrWhiteSpace(permisoUpdateDto.Modulo) || !string.IsNullOrWhiteSpace(permisoUpdateDto.Accion))
+        {
+            var nuevoNombrePermiso = $"{permisoExistente.Modulo.ToLower()}.{permisoExistente.Accion.ToLower()}";
+
+            // Validar que el nuevo nombre no exista (excluyendo el actual)
+            var nombreExiste = await _permisoRepository.ExisteNombrePermisoAsync(nuevoNombrePermiso, idPermiso);
+            if (nombreExiste)
+            {
+                throw new InvalidOperationException($"Ya existe otro permiso con el nombre '{nuevoNombrePermiso}'");
+            }
+
+            permisoExistente.NombrePermiso = nuevoNombrePermiso;
+        }
+
+        if (permisoUpdateDto.Descripcion != null)
+        {
+            permisoExistente.Descripcion = permisoUpdateDto.Descripcion;
+        }
+
+        if (permisoUpdateDto.Estado.HasValue)
+        {
+            permisoExistente.Estado = permisoUpdateDto.Estado.Value;
+        }
+
+        permisoExistente.FechaModificacion = DateTime.Now;
 
         await _permisoRepository.UpdateAsync(permisoExistente);
         await _permisoRepository.SaveChangesAsync();
@@ -184,6 +197,52 @@ public class PermisoService : IPermisoService
         await _permisoRepository.SaveChangesAsync();
 
         return resultado;
+    }
+
+    // ========================================
+    // BÚSQUEDAS ESPECÍFICAS
+    // ========================================
+
+    public async Task<PermisoResponseDto?> GetPermisoByModuloYAccionAsync(string modulo, string accion)
+    {
+        if (string.IsNullOrWhiteSpace(modulo))
+        {
+            throw new ArgumentException("El módulo es obligatorio", nameof(modulo));
+        }
+
+        if (string.IsNullOrWhiteSpace(accion))
+        {
+            throw new ArgumentException("La acción es obligatoria", nameof(accion));
+        }
+
+        var permiso = await _permisoRepository.GetByModuloYAccionAsync(modulo, accion);
+
+        if (permiso == null)
+        {
+            return null;
+        }
+
+        return _mapper.Map<PermisoResponseDto>(permiso);
+    }
+
+    public async Task<IEnumerable<PermisoResponseDto>> BuscarPermisosAsync(string termino)
+    {
+        if (string.IsNullOrWhiteSpace(termino))
+        {
+            throw new ArgumentException("El término de búsqueda es obligatorio", nameof(termino));
+        }
+
+        var todosLosPermisos = await _permisoRepository.GetAllAsync();
+
+        // Buscar en módulo, acción, nombre y descripción
+        var permisosFiltrados = todosLosPermisos.Where(p =>
+            p.Modulo.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
+            p.Accion.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
+            p.NombrePermiso.Contains(termino, StringComparison.OrdinalIgnoreCase) ||
+            (!string.IsNullOrEmpty(p.Descripcion) && p.Descripcion.Contains(termino, StringComparison.OrdinalIgnoreCase))
+        );
+
+        return _mapper.Map<IEnumerable<PermisoResponseDto>>(permisosFiltrados);
     }
 
     // ========================================

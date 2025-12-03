@@ -5,38 +5,34 @@ namespace G2rismBeta.API.Validators;
 
 /// <summary>
 /// Validador para el DTO de actualización de permisos
+/// Soporta actualizaciones parciales (campos opcionales)
+/// Utiliza la clase base PermisoValidatorBase para reutilizar validaciones comunes
 /// </summary>
 public class PermisoUpdateDtoValidator : AbstractValidator<PermisoUpdateDto>
 {
     public PermisoUpdateDtoValidator()
     {
-        RuleFor(x => x.Modulo)
-            .NotEmpty()
-            .WithMessage("El módulo es obligatorio")
-            .Length(3, 50)
-            .WithMessage("El módulo debe tener entre 3 y 50 caracteres")
-            .Matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$")
-            .WithMessage("El módulo solo puede contener letras y espacios");
+        // ID del permiso es obligatorio
+        RuleFor(x => x.IdPermiso)
+            .GreaterThan(0)
+            .WithMessage("El ID del permiso debe ser mayor a 0");
 
-        RuleFor(x => x.Accion)
-            .NotEmpty()
-            .WithMessage("La acción es obligatoria")
-            .Length(3, 50)
-            .WithMessage("La acción debe tener entre 3 y 50 caracteres")
-            .Matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$")
-            .WithMessage("La acción solo puede contener letras y espacios")
-            .Must(BeValidAction)
-            .WithMessage("La acción debe ser una de: Crear, Leer, Actualizar, Eliminar, Listar");
+        // Módulo es opcional, pero si se proporciona debe ser válido
+        When(x => !string.IsNullOrEmpty(x.Modulo), () =>
+        {
+            PermisoValidatorBase.ConfigurarValidacionModulo(RuleFor(x => x.Modulo!), esRequerido: false);
+        });
 
-        RuleFor(x => x.Descripcion)
-            .MaximumLength(200)
-            .WithMessage("La descripción no puede exceder 200 caracteres")
-            .When(x => !string.IsNullOrEmpty(x.Descripcion));
-    }
+        // Acción es opcional, pero si se proporciona debe ser válida
+        When(x => !string.IsNullOrEmpty(x.Accion), () =>
+        {
+            PermisoValidatorBase.ConfigurarValidacionAccion(RuleFor(x => x.Accion!), esRequerido: false);
+        });
 
-    private bool BeValidAction(string accion)
-    {
-        var accionesValidas = new[] { "Crear", "Leer", "Actualizar", "Eliminar", "Listar", "Exportar", "Importar" };
-        return accionesValidas.Any(a => a.Equals(accion, StringComparison.OrdinalIgnoreCase));
+        // Descripción es opcional
+        When(x => !string.IsNullOrEmpty(x.Descripcion), () =>
+        {
+            PermisoValidatorBase.ConfigurarValidacionDescripcion(RuleFor(x => x.Descripcion));
+        });
     }
 }

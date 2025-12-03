@@ -24,14 +24,6 @@ public class PermisoCreateDto
     public string Accion { get; set; } = string.Empty;
 
     /// <summary>
-    /// Nombre único del permiso (formato: modulo.accion)
-    /// </summary>
-    /// <example>usuarios.crear</example>
-    [Required(ErrorMessage = "El nombre del permiso es obligatorio")]
-    [StringLength(100, ErrorMessage = "El nombre no puede exceder 100 caracteres")]
-    public string NombrePermiso { get; set; } = string.Empty;
-
-    /// <summary>
     /// Descripción del permiso
     /// </summary>
     /// <example>Permite crear nuevos usuarios en el sistema</example>

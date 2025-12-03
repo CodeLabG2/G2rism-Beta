@@ -51,11 +51,19 @@ public class MappingProfile : Profile
         // CreateDto → Modelo
         CreateMap<PermisoCreateDto, Permiso>()
             .ForMember(dest => dest.IdPermiso, opt => opt.Ignore())
+            .ForMember(dest => dest.NombrePermiso, opt => opt.Ignore()) // Se genera en el servicio
+            .ForMember(dest => dest.FechaCreacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
             .ForMember(dest => dest.RolesPermisos, opt => opt.Ignore());
 
-        // UpdateDto → Modelo
+        // UpdateDto → Modelo (soporta actualizaciones parciales)
         CreateMap<PermisoUpdateDto, Permiso>()
-            .ForMember(dest => dest.RolesPermisos, opt => opt.Ignore());
+            .ForMember(dest => dest.IdPermiso, opt => opt.Ignore())
+            .ForMember(dest => dest.NombrePermiso, opt => opt.Ignore()) // Se regenera en el servicio
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaModificacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.RolesPermisos, opt => opt.Ignore())
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
         // Modelo → ResponseDto
         CreateMap<Permiso, PermisoResponseDto>()

@@ -13,6 +13,7 @@ using G2rismBeta.API.DTOs.Proveedor;
 using G2rismBeta.API.DTOs.ContratoProveedor;
 using G2rismBeta.API.DTOs.Aerolinea;
 using G2rismBeta.API.DTOs.Vuelo;
+using G2rismBeta.API.DTOs.Hotel;
 
 namespace G2rismBeta.API.Mappings;
 
@@ -369,5 +370,38 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.EsVueloDirecto, opt => opt.MapFrom(src => src.EsVueloDirecto))
             .ForMember(dest => dest.DuracionFormateada, opt => opt.MapFrom(src => src.DuracionFormateada))
             .ForMember(dest => dest.EstaActivo, opt => opt.MapFrom(src => src.EstaActivo));
+
+        // ========================================
+        // MAPEOS PARA HOTEL
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<HotelCreateDto, Hotel>()
+            .ForMember(dest => dest.IdHotel, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
+            .ForMember(dest => dest.CheckInHora, opt => opt.Ignore()) // Se mapea manualmente en el service
+            .ForMember(dest => dest.CheckOutHora, opt => opt.Ignore()) // Se mapea manualmente en el service
+            .ForMember(dest => dest.Proveedor, opt => opt.Ignore());
+
+        // UpdateDto → Modelo (para actualizar - solo campos no nulos)
+        CreateMap<HotelUpdateDto, Hotel>()
+            .ForMember(dest => dest.IdHotel, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
+            .ForMember(dest => dest.CheckInHora, opt => opt.Ignore()) // Se mapea manualmente en el service
+            .ForMember(dest => dest.CheckOutHora, opt => opt.Ignore()) // Se mapea manualmente en el service
+            .ForMember(dest => dest.Proveedor, opt => opt.Ignore())
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<Hotel, HotelResponseDto>()
+            .ForMember(dest => dest.NombreProveedor, opt => opt.MapFrom(src => src.Proveedor != null ? src.Proveedor.NombreEmpresa : string.Empty))
+            .ForMember(dest => dest.CheckInHora, opt => opt.MapFrom(src => src.CheckInHora.HasValue ? src.CheckInHora.Value.ToString(@"hh\:mm") : null))
+            .ForMember(dest => dest.CheckOutHora, opt => opt.MapFrom(src => src.CheckOutHora.HasValue ? src.CheckOutHora.Value.ToString(@"hh\:mm") : null))
+            .ForMember(dest => dest.EstaActivo, opt => opt.MapFrom(src => src.EstaActivo))
+            .ForMember(dest => dest.NombreCompleto, opt => opt.MapFrom(src => src.NombreCompleto))
+            .ForMember(dest => dest.TieneServiciosPremium, opt => opt.MapFrom(src => src.TieneServiciosPremium))
+            .ForMember(dest => dest.ClasificacionTexto, opt => opt.MapFrom(src => src.ClasificacionTexto));
     }
 }

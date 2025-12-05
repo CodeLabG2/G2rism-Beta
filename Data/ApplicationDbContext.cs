@@ -116,6 +116,11 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<Vuelo> Vuelos { get; set; }
 
+    /// <summary>
+    /// Tabla de Hoteles
+    /// </summary>
+    public DbSet<Hotel> Hoteles { get; set; }
+
     // ========================================
     // CONFIGURACIÓN AVANZADA DE ENTIDADES
     // ========================================
@@ -608,6 +613,56 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(v => v.IdProveedor)
                 .OnDelete(DeleteBehavior.Restrict) // No eliminar proveedor si tiene vuelos
                 .HasConstraintName("fk_vuelo_proveedor");
+        });
+
+        // ========================================
+        // CONFIGURACIÓN: HOTEL
+        // ========================================
+        modelBuilder.Entity<Hotel>(entity =>
+        {
+            // Índice compuesto único: nombre + ciudad (evita hoteles duplicados en misma ciudad)
+            entity.HasIndex(e => new { e.Nombre, e.Ciudad })
+                .IsUnique()
+                .HasDatabaseName("idx_hotel_nombre_ciudad_unique");
+
+            // Índice en ciudad para búsquedas por ubicación
+            entity.HasIndex(e => e.Ciudad)
+                .HasDatabaseName("idx_hotel_ciudad");
+
+            // Índice en país para búsquedas por país
+            entity.HasIndex(e => e.Pais)
+                .HasDatabaseName("idx_hotel_pais");
+
+            // Índice en estrellas para filtrado por clasificación
+            entity.HasIndex(e => e.Estrellas)
+                .HasDatabaseName("idx_hotel_estrellas");
+
+            // Índice en categoría para filtrado
+            entity.HasIndex(e => e.Categoria)
+                .HasDatabaseName("idx_hotel_categoria");
+
+            // Índice en estado
+            entity.HasIndex(e => e.Estado)
+                .HasDatabaseName("idx_hotel_estado");
+
+            // Índice en precio_por_noche para búsquedas por rango de precio
+            entity.HasIndex(e => e.PrecioPorNoche)
+                .HasDatabaseName("idx_hotel_precio");
+
+            // Índice en id_proveedor
+            entity.HasIndex(e => e.IdProveedor)
+                .HasDatabaseName("idx_hotel_proveedor");
+
+            // Índice compuesto para búsquedas con servicios (hoteles premium)
+            entity.HasIndex(e => new { e.TienePiscina, e.TieneGimnasio, e.TieneRestaurante })
+                .HasDatabaseName("idx_hotel_servicios_premium");
+
+            // Relación con Proveedor (N:1)
+            entity.HasOne(h => h.Proveedor)
+                .WithMany() // No necesitamos navegación inversa en Proveedor
+                .HasForeignKey(h => h.IdProveedor)
+                .OnDelete(DeleteBehavior.Restrict) // No eliminar proveedor si tiene hoteles
+                .HasConstraintName("fk_hotel_proveedor");
         });
     }
 }

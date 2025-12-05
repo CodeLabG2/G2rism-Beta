@@ -79,11 +79,12 @@ builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
 builder.Services.AddScoped<IContratoProveedorRepository, ContratoProveedorRepository>();
 
 // ========================================
-// REGISTRAR REPOSITORIES - AEROLÍNEAS Y VUELOS
+// REGISTRAR REPOSITORIES - AEROLÍNEAS, VUELOS Y HOTELES
 // ========================================
 
 builder.Services.AddScoped<IAerolineaRepository, AerolineaRepository>();
 builder.Services.AddScoped<IVueloRepository, VueloRepository>();
+builder.Services.AddScoped<IHotelRepository, HotelRepository>();
 
 // ========================================
 // REGISTRAR SERVICES - ROLES Y PERMISOS
@@ -117,11 +118,12 @@ builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<IContratoProveedorService, ContratoProveedorService>();
 
 // ========================================
-// REGISTRAR SERVICES - AEROLÍNEAS Y VUELOS
+// REGISTRAR SERVICES - AEROLÍNEAS, VUELOS Y HOTELES
 // ========================================
 
 builder.Services.AddScoped<IAerolineaService, AerolineaService>();
 builder.Services.AddScoped<IVueloService, VueloService>();
+builder.Services.AddScoped<IHotelService, HotelService>();
 
 // ========================================
 // CONFIGURACIÓN DE AUTENTICACIÓN JWT

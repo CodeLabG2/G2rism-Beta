@@ -121,6 +121,11 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<Hotel> Hoteles { get; set; }
 
+    /// <summary>
+    /// Tabla de Servicios Adicionales
+    /// </summary>
+    public DbSet<ServicioAdicional> ServiciosAdicionales { get; set; }
+
     // ========================================
     // CONFIGURACIÓN AVANZADA DE ENTIDADES
     // ========================================

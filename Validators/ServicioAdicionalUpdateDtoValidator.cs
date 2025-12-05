@@ -1,0 +1,128 @@
+using FluentValidation;
+using G2rismBeta.API.DTOs.ServicioAdicional;
+using System.Text.Json;
+
+namespace G2rismBeta.API.Validators;
+
+/// <summary>
+/// Validador para ServicioAdicionalUpdateDto
+/// </summary>
+public class ServicioAdicionalUpdateDtoValidator : AbstractValidator<ServicioAdicionalUpdateDto>
+{
+    private static readonly string[] TiposPermitidos = { "tour", "guia", "actividad", "transporte_interno" };
+    private static readonly string[] UnidadesPermitidas = { "persona", "grupo", "hora", "dia" };
+
+    public ServicioAdicionalUpdateDtoValidator()
+    {
+        // ID Proveedor
+        RuleFor(x => x.IdProveedor)
+            .GreaterThan(0)
+            .WithMessage("El ID del proveedor debe ser mayor a 0")
+            .When(x => x.IdProveedor.HasValue);
+
+        // Nombre
+        RuleFor(x => x.Nombre)
+            .NotEmpty()
+            .WithMessage("El nombre del servicio no puede estar vacío")
+            .MaximumLength(200)
+            .WithMessage("El nombre no puede exceder 200 caracteres")
+            .Matches(@"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\-&'.0-9]+$")
+            .WithMessage("El nombre solo puede contener letras, números, espacios y caracteres: - & ' .")
+            .When(x => !string.IsNullOrEmpty(x.Nombre));
+
+        // Tipo
+        RuleFor(x => x.Tipo)
+            .NotEmpty()
+            .WithMessage("El tipo de servicio no puede estar vacío")
+            .MaximumLength(50)
+            .WithMessage("El tipo no puede exceder 50 caracteres")
+            .Must(tipo => TiposPermitidos.Contains(tipo.ToLower()))
+            .WithMessage($"Tipo inválido. Valores permitidos: {string.Join(", ", TiposPermitidos)}")
+            .When(x => !string.IsNullOrEmpty(x.Tipo));
+
+        // Descripción
+        RuleFor(x => x.Descripcion)
+            .MaximumLength(5000)
+            .WithMessage("La descripción no puede exceder 5000 caracteres")
+            .When(x => !string.IsNullOrEmpty(x.Descripcion));
+
+        // Precio
+        RuleFor(x => x.Precio)
+            .GreaterThan(0)
+            .WithMessage("El precio debe ser mayor a 0")
+            .LessThanOrEqualTo(9999999.99m)
+            .WithMessage("El precio no puede exceder 9,999,999.99")
+            .When(x => x.Precio.HasValue);
+
+        // Unidad
+        RuleFor(x => x.Unidad)
+            .NotEmpty()
+            .WithMessage("La unidad de medida no puede estar vacía")
+            .MaximumLength(50)
+            .WithMessage("La unidad no puede exceder 50 caracteres")
+            .Must(unidad => UnidadesPermitidas.Contains(unidad.ToLower()))
+            .WithMessage($"Unidad inválida. Valores permitidos: {string.Join(", ", UnidadesPermitidas)}")
+            .When(x => !string.IsNullOrEmpty(x.Unidad));
+
+        // Tiempo estimado
+        RuleFor(x => x.TiempoEstimado)
+            .GreaterThan(0)
+            .WithMessage("El tiempo estimado debe ser mayor a 0 minutos")
+            .LessThanOrEqualTo(1440)
+            .WithMessage("El tiempo estimado no puede exceder 1440 minutos (24 horas)")
+            .When(x => x.TiempoEstimado.HasValue);
+
+        // Ubicación
+        RuleFor(x => x.Ubicacion)
+            .MaximumLength(500)
+            .WithMessage("La ubicación no puede exceder 500 caracteres")
+            .When(x => !string.IsNullOrEmpty(x.Ubicacion));
+
+        // Requisitos
+        RuleFor(x => x.Requisitos)
+            .MaximumLength(2000)
+            .WithMessage("Los requisitos no pueden exceder 2000 caracteres")
+            .When(x => !string.IsNullOrEmpty(x.Requisitos));
+
+        // Capacidad máxima
+        RuleFor(x => x.CapacidadMaxima)
+            .GreaterThan(0)
+            .WithMessage("La capacidad máxima debe ser mayor a 0")
+            .LessThanOrEqualTo(1000)
+            .WithMessage("La capacidad máxima no puede exceder 1000")
+            .When(x => x.CapacidadMaxima.HasValue);
+
+        // Edad mínima
+        RuleFor(x => x.EdadMinima)
+            .GreaterThanOrEqualTo(0)
+            .WithMessage("La edad mínima no puede ser negativa")
+            .LessThanOrEqualTo(100)
+            .WithMessage("La edad mínima no puede exceder 100 años")
+            .When(x => x.EdadMinima.HasValue);
+
+        // Idiomas disponibles (JSON)
+        RuleFor(x => x.IdiomasDisponibles)
+            .Must(BeValidJson)
+            .WithMessage("Los idiomas deben ser un array JSON válido (ej: [\"Español\", \"Inglés\"])")
+            .When(x => !string.IsNullOrEmpty(x.IdiomasDisponibles));
+    }
+
+    /// <summary>
+    /// Valida que una cadena sea JSON válido
+    /// </summary>
+    private bool BeValidJson(string? json)
+    {
+        if (string.IsNullOrEmpty(json))
+            return true;
+
+        try
+        {
+            JsonDocument.Parse(json);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}

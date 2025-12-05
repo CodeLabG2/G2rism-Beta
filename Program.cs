@@ -79,12 +79,13 @@ builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
 builder.Services.AddScoped<IContratoProveedorRepository, ContratoProveedorRepository>();
 
 // ========================================
-// REGISTRAR REPOSITORIES - AEROLÍNEAS, VUELOS Y HOTELES
+// REGISTRAR REPOSITORIES - AEROLÍNEAS, VUELOS, HOTELES Y SERVICIOS ADICIONALES
 // ========================================
 
 builder.Services.AddScoped<IAerolineaRepository, AerolineaRepository>();
 builder.Services.AddScoped<IVueloRepository, VueloRepository>();
 builder.Services.AddScoped<IHotelRepository, HotelRepository>();
+builder.Services.AddScoped<IServicioAdicionalRepository, ServicioAdicionalRepository>();
 
 // ========================================
 // REGISTRAR SERVICES - ROLES Y PERMISOS
@@ -118,12 +119,13 @@ builder.Services.AddScoped<IProveedorService, ProveedorService>();
 builder.Services.AddScoped<IContratoProveedorService, ContratoProveedorService>();
 
 // ========================================
-// REGISTRAR SERVICES - AEROLÍNEAS, VUELOS Y HOTELES
+// REGISTRAR SERVICES - AEROLÍNEAS, VUELOS, HOTELES Y SERVICIOS ADICIONALES
 // ========================================
 
 builder.Services.AddScoped<IAerolineaService, AerolineaService>();
 builder.Services.AddScoped<IVueloService, VueloService>();
 builder.Services.AddScoped<IHotelService, HotelService>();
+builder.Services.AddScoped<IServicioAdicionalService, ServicioAdicionalService>();
 
 // ========================================
 // CONFIGURACIÓN DE AUTENTICACIÓN JWT

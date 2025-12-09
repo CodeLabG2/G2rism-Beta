@@ -169,4 +169,17 @@ public class VueloRepository : IVueloRepository
             .ThenBy(v => v.HoraSalida)
             .ToListAsync();
     }
+
+    public async Task<Vuelo?> GetVueloConDetallesAsync(int id)
+    {
+        return await _context.Vuelos
+            .Include(v => v.Aerolinea)
+            .Include(v => v.Proveedor)
+            .FirstOrDefaultAsync(v => v.IdVuelo == id);
+    }
+
+    public async Task<int> SaveChangesAsync()
+    {
+        return await _context.SaveChangesAsync();
+    }
 }

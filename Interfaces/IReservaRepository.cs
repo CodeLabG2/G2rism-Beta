@@ -65,4 +65,11 @@ public interface IReservaRepository : IGenericRepository<Reserva>
     /// <param name="idCliente">ID del cliente</param>
     /// <returns>True si tiene reservas activas</returns>
     Task<bool> ClienteTieneReservasActivasAsync(int idCliente);
+
+    /// <summary>
+    /// Verificar si existe una reserva con el ID especificado
+    /// </summary>
+    /// <param name="idReserva">ID de la reserva</param>
+    /// <returns>True si existe</returns>
+    Task<bool> ExisteReservaAsync(int idReserva);
 }

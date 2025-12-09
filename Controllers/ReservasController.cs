@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using G2rismBeta.API.DTOs.Reserva;
 using G2rismBeta.API.DTOs.ReservaHotel;
+using G2rismBeta.API.DTOs.ReservaVuelo;
 using G2rismBeta.API.Interfaces;
 
 namespace G2rismBeta.API.Controllers;
@@ -18,18 +19,21 @@ public class ReservasController : ControllerBase
 {
     private readonly IReservaService _reservaService;
     private readonly IReservaHotelService _reservaHotelService;
+    private readonly IReservaVueloService _reservaVueloService;
     private readonly ILogger<ReservasController> _logger;
 
     /// <summary>
-    /// Constructor: Recibe el servicio de reservas, servicio de reserva-hotel y logger por inyección de dependencias
+    /// Constructor: Recibe los servicios de reservas y logger por inyección de dependencias
     /// </summary>
     public ReservasController(
         IReservaService reservaService,
         IReservaHotelService reservaHotelService,
+        IReservaVueloService reservaVueloService,
         ILogger<ReservasController> logger)
     {
         _reservaService = reservaService;
         _reservaHotelService = reservaHotelService;
+        _reservaVueloService = reservaVueloService;
         _logger = logger;
     }
 
@@ -592,6 +596,219 @@ public class ReservasController : ControllerBase
         {
             _logger.LogError(ex, "❌ Error al eliminar hotel de la reserva");
             return StatusCode(500, new { message = "Error al eliminar hotel de la reserva", error = ex.Message });
+        }
+    }
+
+    // ========================================
+    // ENDPOINTS DE GESTIÓN DE VUELOS EN RESERVAS
+    // ========================================
+
+    /// <summary>
+    /// Agregar un vuelo a una reserva existente
+    /// </summary>
+    /// <param name="id">ID de la reserva</param>
+    /// <param name="dto">Datos del vuelo a agregar</param>
+    /// <remarks>
+    /// Ejemplo de request:
+    ///
+    ///     POST /api/reservas/1/vuelos
+    ///     {
+    ///         "idVuelo": 3,
+    ///         "numeroPasajeros": 2,
+    ///         "clase": "economica",
+    ///         "asientosAsignados": "[\"12A\", \"12B\"]",
+    ///         "equipajeIncluido": true,
+    ///         "equipajeExtra": 10,
+    ///         "costoEquipajeExtra": 50000
+    ///     }
+    ///
+    /// El sistema realiza automáticamente:
+    /// - Valida cupos disponibles en el vuelo
+    /// - Descuenta cupos del vuelo
+    /// - Calcula precio según clase (económica/ejecutiva)
+    /// - Calcula subtotal (pasajeros * precio + equipaje extra)
+    /// - Actualiza el monto total de la reserva
+    /// </remarks>
+    /// <response code="201">Vuelo agregado exitosamente a la reserva</response>
+    /// <response code="400">Datos inválidos o reglas de negocio no cumplidas</response>
+    /// <response code="404">Reserva o Vuelo no encontrado</response>
+    [HttpPost("{id}/vuelos")]
+    [ProducesResponseType(typeof(ReservaVueloResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ReservaVueloResponseDto>> AgregarVueloAReserva(int id, [FromBody] ReservaVueloCreateDto dto)
+    {
+        try
+        {
+            _logger.LogInformation("🛫 Agregando vuelo {IdVuelo} a la reserva {IdReserva}", dto.IdVuelo, id);
+
+            // Asignar el ID de la reserva desde la ruta al DTO
+            dto.IdReserva = id;
+
+            var reservaVuelo = await _reservaVueloService.AgregarVueloAReservaAsync(dto);
+            _logger.LogInformation("✅ Vuelo agregado exitosamente. ID de relación: {Id}", reservaVuelo.Id);
+
+            return CreatedAtAction(
+                nameof(ObtenerVueloDeReserva),
+                new { id, idReservaVuelo = reservaVuelo.Id },
+                reservaVuelo);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Recurso no encontrado");
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Datos inválidos");
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Operación no válida");
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error al agregar vuelo a la reserva");
+            return StatusCode(500, new { message = "Error al agregar vuelo a la reserva", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtener todos los vuelos de una reserva
+    /// </summary>
+    /// <param name="id">ID de la reserva</param>
+    /// <remarks>
+    /// Ejemplo de request:
+    ///
+    ///     GET /api/reservas/1/vuelos
+    ///
+    /// Devuelve la lista de todos los vuelos incluidos en la reserva con:
+    /// - Información del vuelo (número, origen, destino, fechas)
+    /// - Nombre de la aerolínea
+    /// - Número de pasajeros y clase
+    /// - Subtotal calculado
+    /// - Información de equipaje
+    /// - Propiedades computadas
+    /// </remarks>
+    /// <response code="200">Lista de vuelos obtenida exitosamente</response>
+    [HttpGet("{id}/vuelos")]
+    [ProducesResponseType(typeof(IEnumerable<ReservaVueloResponseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<ReservaVueloResponseDto>>> ObtenerVuelosPorReserva(int id)
+    {
+        try
+        {
+            _logger.LogInformation("📋 Obteniendo vuelos de la reserva {IdReserva}", id);
+            var vuelos = await _reservaVueloService.GetVuelosPorReservaAsync(id);
+            _logger.LogInformation("✅ {Count} vuelos encontrados", vuelos.Count());
+            return Ok(vuelos);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Reserva no encontrada");
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error al obtener vuelos de la reserva");
+            return StatusCode(500, new { message = "Error al obtener vuelos de la reserva", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtener información detallada de un vuelo específico en una reserva
+    /// </summary>
+    /// <param name="id">ID de la reserva</param>
+    /// <param name="idReservaVuelo">ID de la relación ReservaVuelo</param>
+    /// <remarks>
+    /// Ejemplo de request:
+    ///
+    ///     GET /api/reservas/1/vuelos/5
+    ///
+    /// </remarks>
+    /// <response code="200">Información del vuelo obtenida exitosamente</response>
+    /// <response code="404">Vuelo no encontrado en esta reserva</response>
+    [HttpGet("{id}/vuelos/{idReservaVuelo}")]
+    [ProducesResponseType(typeof(ReservaVueloResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ReservaVueloResponseDto>> ObtenerVueloDeReserva(int id, int idReservaVuelo)
+    {
+        try
+        {
+            _logger.LogInformation("🔍 Obteniendo vuelo {IdReservaVuelo} de la reserva {IdReserva}", idReservaVuelo, id);
+            var reservaVuelo = await _reservaVueloService.GetReservaVueloPorIdAsync(idReservaVuelo);
+
+            // Verificar que el vuelo pertenece a esta reserva
+            if (reservaVuelo.IdReserva != id)
+            {
+                _logger.LogWarning("⚠️ El vuelo {IdReservaVuelo} no pertenece a la reserva {IdReserva}", idReservaVuelo, id);
+                return NotFound(new { message = "El vuelo especificado no pertenece a esta reserva" });
+            }
+
+            return Ok(reservaVuelo);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Vuelo no encontrado");
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error al obtener información del vuelo");
+            return StatusCode(500, new { message = "Error al obtener información del vuelo", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Eliminar un vuelo de una reserva
+    /// </summary>
+    /// <param name="id">ID de la reserva</param>
+    /// <param name="idReservaVuelo">ID de la relación ReservaVuelo</param>
+    /// <remarks>
+    /// Ejemplo de request:
+    ///
+    ///     DELETE /api/reservas/1/vuelos/5
+    ///
+    /// Al eliminar un vuelo:
+    /// - Se elimina la relación ReservaVuelo
+    /// - Se devuelven los cupos al vuelo
+    /// - Se recalcula automáticamente el monto total de la reserva
+    /// - Se actualiza el saldo pendiente
+    /// </remarks>
+    /// <response code="200">Vuelo eliminado exitosamente de la reserva</response>
+    /// <response code="404">Vuelo no encontrado en esta reserva</response>
+    [HttpDelete("{id}/vuelos/{idReservaVuelo}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> EliminarVueloDeReserva(int id, int idReservaVuelo)
+    {
+        try
+        {
+            _logger.LogInformation("🗑️ Eliminando vuelo {IdReservaVuelo} de la reserva {IdReserva}", idReservaVuelo, id);
+
+            // Primero verificar que el vuelo pertenece a esta reserva
+            var reservaVuelo = await _reservaVueloService.GetReservaVueloPorIdAsync(idReservaVuelo);
+            if (reservaVuelo.IdReserva != id)
+            {
+                _logger.LogWarning("⚠️ El vuelo {IdReservaVuelo} no pertenece a la reserva {IdReserva}", idReservaVuelo, id);
+                return NotFound(new { message = "El vuelo especificado no pertenece a esta reserva" });
+            }
+
+            await _reservaVueloService.EliminarVueloDeReservaAsync(idReservaVuelo);
+            _logger.LogInformation("✅ Vuelo eliminado exitosamente de la reserva");
+
+            return Ok(new { message = "Vuelo eliminado exitosamente de la reserva" });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Vuelo no encontrado");
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error al eliminar vuelo de la reserva");
+            return StatusCode(500, new { message = "Error al eliminar vuelo de la reserva", error = ex.Message });
         }
     }
 }

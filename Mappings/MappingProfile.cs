@@ -18,6 +18,7 @@ using G2rismBeta.API.DTOs.ServicioAdicional;
 using G2rismBeta.API.DTOs.PaqueteTuristico;
 using G2rismBeta.API.DTOs.Reserva;
 using G2rismBeta.API.DTOs.ReservaHotel;
+using G2rismBeta.API.DTOs.ReservaVuelo;
 
 namespace G2rismBeta.API.Mappings;
 
@@ -540,5 +541,38 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CostoPorHabitacion, opt => opt.MapFrom(src => src.CostoPorHabitacion))
             .ForMember(dest => dest.EstadiaActiva, opt => opt.MapFrom(src => src.EstadiaActiva))
             .ForMember(dest => dest.DiasHastaCheckin, opt => opt.MapFrom(src => src.DiasHastaCheckin));
+
+        // ========================================
+        // MAPEOS PARA RESERVA_VUELO
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<ReservaVueloCreateDto, ReservaVuelo>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.PrecioPorPasajero, opt => opt.Ignore()) // Se calcula según clase
+            .ForMember(dest => dest.Subtotal, opt => opt.Ignore()) // Se calcula en el servicio
+            .ForMember(dest => dest.FechaAgregado, opt => opt.Ignore()) // Se establece en el servicio
+            .ForMember(dest => dest.Reserva, opt => opt.Ignore()) // Navegación
+            .ForMember(dest => dest.Vuelo, opt => opt.Ignore()); // Navegación
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<ReservaVuelo, ReservaVueloResponseDto>()
+            .ForMember(dest => dest.NumeroVuelo, opt => opt.MapFrom(src =>
+                src.Vuelo != null ? src.Vuelo.NumeroVuelo : null))
+            .ForMember(dest => dest.Origen, opt => opt.MapFrom(src =>
+                src.Vuelo != null ? src.Vuelo.Origen : null))
+            .ForMember(dest => dest.Destino, opt => opt.MapFrom(src =>
+                src.Vuelo != null ? src.Vuelo.Destino : null))
+            .ForMember(dest => dest.FechaSalida, opt => opt.MapFrom(src =>
+                src.Vuelo != null ? src.Vuelo.FechaSalida : (DateTime?)null))
+            .ForMember(dest => dest.HoraSalida, opt => opt.MapFrom(src =>
+                src.Vuelo != null ? src.Vuelo.HoraSalida : (TimeSpan?)null))
+            .ForMember(dest => dest.FechaLlegada, opt => opt.MapFrom(src =>
+                src.Vuelo != null ? src.Vuelo.FechaLlegada : (DateTime?)null))
+            .ForMember(dest => dest.NombreAerolinea, opt => opt.MapFrom(src =>
+                src.Vuelo != null && src.Vuelo.Aerolinea != null ? src.Vuelo.Aerolinea.Nombre : null))
+            .ForMember(dest => dest.CostoTotal, opt => opt.MapFrom(src => src.CostoTotal))
+            .ForMember(dest => dest.EsClaseEjecutiva, opt => opt.MapFrom(src => src.EsClaseEjecutiva))
+            .ForMember(dest => dest.TieneEquipajeExtra, opt => opt.MapFrom(src => src.TieneEquipajeExtra));
     }
 }

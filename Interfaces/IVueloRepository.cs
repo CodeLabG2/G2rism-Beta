@@ -22,6 +22,13 @@ public interface IVueloRepository
     Task<Vuelo?> GetByIdAsync(int id);
 
     /// <summary>
+    /// Obtiene un vuelo con todos sus detalles (incluye Aerolínea y Proveedor)
+    /// </summary>
+    /// <param name="id">ID del vuelo</param>
+    /// <returns>Vuelo con relaciones cargadas</returns>
+    Task<Vuelo?> GetVueloConDetallesAsync(int id);
+
+    /// <summary>
     /// Busca vuelos por origen y destino
     /// </summary>
     /// <param name="origen">Ciudad/aeropuerto de origen</param>
@@ -100,4 +107,10 @@ public interface IVueloRepository
     /// <param name="fecha">Fecha (opcional)</param>
     /// <returns>Lista de vuelos que cumplen los criterios</returns>
     Task<IEnumerable<Vuelo>> BuscarAsync(string? origen, string? destino, DateTime? fecha);
+
+    /// <summary>
+    /// Guarda los cambios en la base de datos
+    /// </summary>
+    /// <returns>Número de registros afectados</returns>
+    Task<int> SaveChangesAsync();
 }

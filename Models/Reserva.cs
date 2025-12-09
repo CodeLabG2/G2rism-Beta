@@ -158,11 +158,11 @@ public class Reserva
     /// </summary>
     public virtual ICollection<ReservaHotel> ReservasHoteles { get; set; } = new List<ReservaHotel>();
 
-    // /// <summary>
-    // /// Vuelos incluidos en la reserva (relación 1:N)
-    // /// Una reserva puede tener múltiples vuelos
-    // /// </summary>
-    // public virtual ICollection<ReservaVuelo> ReservasVuelos { get; set; } = new List<ReservaVuelo>();
+    /// <summary>
+    /// Vuelos incluidos en la reserva (relación 1:N)
+    /// Una reserva puede tener múltiples vuelos
+    /// </summary>
+    public virtual ICollection<ReservaVuelo> ReservasVuelos { get; set; } = new List<ReservaVuelo>();
 
     // /// <summary>
     // /// Paquetes turísticos incluidos en la reserva (relación 1:N)

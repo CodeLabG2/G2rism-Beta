@@ -145,8 +145,12 @@ public class ApplicationDbContext : DbContext
     /// </summary>
     public DbSet<ReservaHotel> ReservasHoteles { get; set; }
 
-    // TODO: Agregar en Día 4
-    // public DbSet<ReservaVuelo> ReservasVuelos { get; set; }
+    /// <summary>
+    /// Tabla intermedia Reservas-Vuelos (relación N:M)
+    /// </summary>
+    public DbSet<ReservaVuelo> ReservasVuelos { get; set; }
+
+    // TODO: Agregar en futuras fases
     // public DbSet<ReservaPaquete> ReservasPaquetes { get; set; }
     // public DbSet<ReservaServicio> ReservasServicios { get; set; }
 
@@ -780,6 +784,42 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(rh => rh.IdHotel)
                 .OnDelete(DeleteBehavior.Restrict) // No eliminar hotel si tiene reservas
                 .HasConstraintName("fk_reserva_hotel_hotel");
+        });
+
+        // ========================================
+        // CONFIGURACIÓN: RESERVA_VUELO
+        // ========================================
+        modelBuilder.Entity<ReservaVuelo>(entity =>
+        {
+            // Índice en id_reserva para consultas rápidas
+            entity.HasIndex(e => e.IdReserva)
+                .HasDatabaseName("idx_reserva_vuelo_reserva");
+
+            // Índice en id_vuelo para consultas rápidas
+            entity.HasIndex(e => e.IdVuelo)
+                .HasDatabaseName("idx_reserva_vuelo_vuelo");
+
+            // Índice en clase para filtrado
+            entity.HasIndex(e => e.Clase)
+                .HasDatabaseName("idx_reserva_vuelo_clase");
+
+            // Índice compuesto para búsqueda de reservas de vuelo
+            entity.HasIndex(e => new { e.IdVuelo, e.IdReserva })
+                .HasDatabaseName("idx_reserva_vuelo_vuelo_reserva");
+
+            // Relación con Reserva (N:1)
+            entity.HasOne(rv => rv.Reserva)
+                .WithMany(r => r.ReservasVuelos)
+                .HasForeignKey(rv => rv.IdReserva)
+                .OnDelete(DeleteBehavior.Cascade) // Si se elimina la reserva, eliminar sus vuelos
+                .HasConstraintName("fk_reserva_vuelo_reserva");
+
+            // Relación con Vuelo (N:1)
+            entity.HasOne(rv => rv.Vuelo)
+                .WithMany() // No necesitamos navegación inversa en Vuelo
+                .HasForeignKey(rv => rv.IdVuelo)
+                .OnDelete(DeleteBehavior.Restrict) // No eliminar vuelo si tiene reservas
+                .HasConstraintName("fk_reserva_vuelo_vuelo");
         });
     }
 }

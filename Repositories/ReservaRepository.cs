@@ -148,4 +148,9 @@ public class ReservaRepository : GenericRepository<Reserva>, IReservaRepository
             .Include(r => r.Empleado)
             .FirstOrDefaultAsync(r => r.IdReserva == id);
     }
+
+    public async Task<bool> ExisteReservaAsync(int idReserva)
+    {
+        return await _dbSet.AnyAsync(r => r.IdReserva == idReserva);
+    }
 }

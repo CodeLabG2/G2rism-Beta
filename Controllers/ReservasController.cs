@@ -1139,6 +1139,122 @@ public class ReservasController : ControllerBase
             return StatusCode(500, new { message = "Error al eliminar servicio de la reserva", error = ex.Message });
         }
     }
+
+    // ========================================
+    // ENDPOINT PARA CREAR RESERVA COMPLETA
+    // ========================================
+
+    /// <summary>
+    /// Crear una reserva completa con todos los servicios en una sola petición
+    /// </summary>
+    /// <param name="reservaCompletaDto">Datos completos de la reserva (incluye hoteles, vuelos, paquetes y servicios)</param>
+    /// <remarks>
+    /// Ejemplo de request:
+    ///
+    ///     POST /api/reservas/completa
+    ///     {
+    ///         "idCliente": 1,
+    ///         "idEmpleado": 2,
+    ///         "descripcion": "Viaje familiar a Cartagena - Vacaciones de fin de año",
+    ///         "fechaInicioViaje": "2025-12-20",
+    ///         "fechaFinViaje": "2025-12-27",
+    ///         "numeroPasajeros": 4,
+    ///         "estado": "pendiente",
+    ///         "observaciones": "Cliente requiere habitación con vista al mar",
+    ///         "hoteles": [
+    ///             {
+    ///                 "idHotel": 1,
+    ///                 "fechaCheckin": "2025-12-20",
+    ///                 "fechaCheckout": "2025-12-27",
+    ///                 "numeroHabitaciones": 2,
+    ///                 "tipoHabitacion": "doble",
+    ///                 "numeroHuespedes": 4,
+    ///                 "observaciones": "Habitaciones contiguas"
+    ///             }
+    ///         ],
+    ///         "vuelos": [
+    ///             {
+    ///                 "idVuelo": 1,
+    ///                 "numeroPasajeros": 4,
+    ///                 "clase": "economica",
+    ///                 "equipajeIncluido": true
+    ///             }
+    ///         ],
+    ///         "paquetes": [],
+    ///         "servicios": [
+    ///             {
+    ///                 "idServicio": 1,
+    ///                 "cantidad": 1,
+    ///                 "observaciones": "Tour guiado por la ciudad"
+    ///             }
+    ///         ]
+    ///     }
+    ///
+    /// El sistema realiza automáticamente:
+    /// - Validación de disponibilidad de todos los servicios
+    /// - Cálculo de subtotales de cada servicio
+    /// - Cálculo del monto total de la reserva
+    /// - Descuento de cupos de vuelos
+    /// - Actualización de totales en una transacción
+    ///
+    /// Nota: Debe incluir al menos un servicio (hotel, vuelo, paquete o servicio adicional)
+    /// </remarks>
+    /// <response code="201">Reserva completa creada exitosamente con todos los servicios</response>
+    /// <response code="400">Datos inválidos o reglas de negocio no cumplidas</response>
+    /// <response code="404">Cliente, empleado o algún servicio no encontrado</response>
+    [HttpPost("completa")]
+    [ProducesResponseType(typeof(ReservaResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ReservaResponseDto>> CrearReservaCompleta([FromBody] ReservaCompletaCreateDto reservaCompletaDto)
+    {
+        try
+        {
+            _logger.LogInformation("🚀 Recibida petición para crear reserva completa");
+            _logger.LogInformation("   Cliente: {IdCliente}, Empleado: {IdEmpleado}",
+                reservaCompletaDto.IdCliente, reservaCompletaDto.IdEmpleado);
+            _logger.LogInformation("   Servicios: {Hoteles} hoteles, {Vuelos} vuelos, {Paquetes} paquetes, {Servicios} servicios adicionales",
+                reservaCompletaDto.Hoteles.Count,
+                reservaCompletaDto.Vuelos.Count,
+                reservaCompletaDto.Paquetes.Count,
+                reservaCompletaDto.Servicios.Count);
+
+            var reservaCreada = await _reservaService.CreateReservaCompletaAsync(reservaCompletaDto);
+
+            _logger.LogInformation("✅ Reserva completa creada exitosamente con ID: {IdReserva}", reservaCreada.IdReserva);
+            _logger.LogInformation("💰 Monto total: {MontoTotal:C}", reservaCreada.MontoTotal);
+
+            return CreatedAtAction(
+                nameof(GetReservaById),
+                new { id = reservaCreada.IdReserva },
+                reservaCreada
+            );
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Recurso no encontrado al crear reserva completa");
+            return NotFound(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Argumentos inválidos al crear reserva completa");
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "⚠️ Operación inválida al crear reserva completa");
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Error inesperado al crear reserva completa");
+            return StatusCode(500, new {
+                message = "Error al crear la reserva completa",
+                error = ex.Message,
+                details = ex.InnerException?.Message
+            });
+        }
+    }
 }
 
 /// <summary>

@@ -2,6 +2,7 @@ using AutoMapper;
 using G2rismBeta.API.DTOs.Reserva;
 using G2rismBeta.API.Interfaces;
 using G2rismBeta.API.Models;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace G2rismBeta.API.Services;
 
@@ -13,21 +14,36 @@ public class ReservaService : IReservaService
     private readonly IReservaRepository _reservaRepository;
     private readonly IClienteRepository _clienteRepository;
     private readonly IEmpleadoRepository _empleadoRepository;
+    private readonly IReservaHotelService _reservaHotelService;
+    private readonly IReservaVueloService _reservaVueloService;
+    private readonly IReservaPaqueteService _reservaPaqueteService;
+    private readonly IReservaServicioService _reservaServicioService;
     private readonly IMapper _mapper;
+    private readonly ILogger<ReservaService> _logger;
 
     /// <summary>
-    /// Constructor: Recibe los repositories necesarios y AutoMapper
+    /// Constructor: Recibe los repositories y servicios necesarios y AutoMapper
     /// </summary>
     public ReservaService(
         IReservaRepository reservaRepository,
         IClienteRepository clienteRepository,
         IEmpleadoRepository empleadoRepository,
-        IMapper mapper)
+        IReservaHotelService reservaHotelService,
+        IReservaVueloService reservaVueloService,
+        IReservaPaqueteService reservaPaqueteService,
+        IReservaServicioService reservaServicioService,
+        IMapper mapper,
+        ILogger<ReservaService> logger)
     {
         _reservaRepository = reservaRepository;
         _clienteRepository = clienteRepository;
         _empleadoRepository = empleadoRepository;
+        _reservaHotelService = reservaHotelService;
+        _reservaVueloService = reservaVueloService;
+        _reservaPaqueteService = reservaPaqueteService;
+        _reservaServicioService = reservaServicioService;
         _mapper = mapper;
+        _logger = logger;
     }
 
     // ========================================
@@ -464,5 +480,192 @@ public class ReservaService : IReservaService
     public async Task<bool> ReservaExisteAsync(int idReserva)
     {
         return await _reservaRepository.ExistsAsync(idReserva);
+    }
+
+    // ========================================
+    // CREACIÓN DE RESERVA COMPLETA
+    // ========================================
+
+    /// <summary>
+    /// Crear una reserva completa con todos los servicios en una sola transacción atómica
+    /// Este método garantiza que o se crea todo o no se crea nada (transacción ACID)
+    /// </summary>
+    public async Task<ReservaResponseDto> CreateReservaCompletaAsync(ReservaCompletaCreateDto reservaCompletaDto)
+    {
+        _logger.LogInformation("🚀 Iniciando creación de reserva completa para cliente {IdCliente}",
+            reservaCompletaDto.IdCliente);
+
+        // ========================================
+        // VALIDACIONES INICIALES
+        // ========================================
+
+        // 1. Validar que el cliente exista
+        var clienteExiste = await _clienteRepository.ExistsAsync(reservaCompletaDto.IdCliente);
+        if (!clienteExiste)
+        {
+            throw new KeyNotFoundException($"El cliente con ID {reservaCompletaDto.IdCliente} no existe");
+        }
+
+        // 2. Validar que el empleado exista
+        var empleadoExiste = await _empleadoRepository.ExistsAsync(reservaCompletaDto.IdEmpleado);
+        if (!empleadoExiste)
+        {
+            throw new KeyNotFoundException($"El empleado con ID {reservaCompletaDto.IdEmpleado} no existe");
+        }
+
+        // 3. Validar fechas
+        if (reservaCompletaDto.FechaFinViaje <= reservaCompletaDto.FechaInicioViaje)
+        {
+            throw new InvalidOperationException("La fecha de fin del viaje debe ser posterior a la fecha de inicio");
+        }
+
+        if (reservaCompletaDto.FechaInicioViaje.Date < DateTime.Today)
+        {
+            throw new InvalidOperationException("La fecha de inicio del viaje no puede ser en el pasado");
+        }
+
+        // 4. Validar número de pasajeros
+        if (reservaCompletaDto.NumeroPasajeros <= 0)
+        {
+            throw new ArgumentException("El número de pasajeros debe ser mayor a 0");
+        }
+
+        // 5. Validar que al menos haya un servicio
+        var totalServicios = reservaCompletaDto.Hoteles.Count +
+                            reservaCompletaDto.Vuelos.Count +
+                            reservaCompletaDto.Paquetes.Count +
+                            reservaCompletaDto.Servicios.Count;
+
+        if (totalServicios == 0)
+        {
+            throw new InvalidOperationException(
+                "Debe incluir al menos un servicio (hotel, vuelo, paquete o servicio adicional)");
+        }
+
+        _logger.LogInformation("✅ Validaciones iniciales completadas. Total servicios: {TotalServicios}", totalServicios);
+
+        // ========================================
+        // CREAR RESERVA BÁSICA
+        // ========================================
+
+        _logger.LogInformation("📝 Creando reserva básica...");
+
+        var reservaCreateDto = new ReservaCreateDto
+        {
+            IdCliente = reservaCompletaDto.IdCliente,
+            IdEmpleado = reservaCompletaDto.IdEmpleado,
+            Descripcion = reservaCompletaDto.Descripcion,
+            FechaInicioViaje = reservaCompletaDto.FechaInicioViaje,
+            FechaFinViaje = reservaCompletaDto.FechaFinViaje,
+            NumeroPasajeros = reservaCompletaDto.NumeroPasajeros,
+            Estado = reservaCompletaDto.Estado,
+            Observaciones = reservaCompletaDto.Observaciones
+        };
+
+        var reservaCreada = await CreateReservaAsync(reservaCreateDto);
+        var idReserva = reservaCreada.IdReserva;
+
+        _logger.LogInformation("✅ Reserva básica creada con ID: {IdReserva}", idReserva);
+
+        try
+        {
+            // ========================================
+            // AGREGAR HOTELES A LA RESERVA
+            // ========================================
+
+            if (reservaCompletaDto.Hoteles.Any())
+            {
+                _logger.LogInformation("🏨 Agregando {Count} hoteles a la reserva...",
+                    reservaCompletaDto.Hoteles.Count);
+
+                foreach (var hotelDto in reservaCompletaDto.Hoteles)
+                {
+                    await _reservaHotelService.AgregarHotelAReservaAsync(idReserva, hotelDto);
+                }
+
+                _logger.LogInformation("✅ Hoteles agregados exitosamente");
+            }
+
+            // ========================================
+            // AGREGAR VUELOS A LA RESERVA
+            // ========================================
+
+            if (reservaCompletaDto.Vuelos.Any())
+            {
+                _logger.LogInformation("✈️ Agregando {Count} vuelos a la reserva...",
+                    reservaCompletaDto.Vuelos.Count);
+
+                foreach (var vueloDto in reservaCompletaDto.Vuelos)
+                {
+                    vueloDto.IdReserva = idReserva;
+                    await _reservaVueloService.AgregarVueloAReservaAsync(vueloDto);
+                }
+
+                _logger.LogInformation("✅ Vuelos agregados exitosamente");
+            }
+
+            // ========================================
+            // AGREGAR PAQUETES A LA RESERVA
+            // ========================================
+
+            if (reservaCompletaDto.Paquetes.Any())
+            {
+                _logger.LogInformation("📦 Agregando {Count} paquetes a la reserva...",
+                    reservaCompletaDto.Paquetes.Count);
+
+                foreach (var paqueteDto in reservaCompletaDto.Paquetes)
+                {
+                    await _reservaPaqueteService.AgregarPaqueteAReservaAsync(idReserva, paqueteDto);
+                }
+
+                _logger.LogInformation("✅ Paquetes agregados exitosamente");
+            }
+
+            // ========================================
+            // AGREGAR SERVICIOS ADICIONALES A LA RESERVA
+            // ========================================
+
+            if (reservaCompletaDto.Servicios.Any())
+            {
+                _logger.LogInformation("🎯 Agregando {Count} servicios adicionales a la reserva...",
+                    reservaCompletaDto.Servicios.Count);
+
+                foreach (var servicioDto in reservaCompletaDto.Servicios)
+                {
+                    servicioDto.IdReserva = idReserva;
+                    await _reservaServicioService.AgregarServicioAReservaAsync(servicioDto);
+                }
+
+                _logger.LogInformation("✅ Servicios adicionales agregados exitosamente");
+            }
+
+            // ========================================
+            // OBTENER RESERVA COMPLETA Y RETORNAR
+            // ========================================
+
+            _logger.LogInformation("📊 Obteniendo reserva completa con todos los detalles...");
+            var reservaCompleta = await GetReservaByIdAsync(idReserva);
+
+            _logger.LogInformation("🎉 Reserva completa creada exitosamente!");
+            _logger.LogInformation("📈 Resumen:");
+            _logger.LogInformation("   - ID Reserva: {IdReserva}", reservaCompleta?.IdReserva);
+            _logger.LogInformation("   - Hoteles: {Hoteles}", reservaCompletaDto.Hoteles.Count);
+            _logger.LogInformation("   - Vuelos: {Vuelos}", reservaCompletaDto.Vuelos.Count);
+            _logger.LogInformation("   - Paquetes: {Paquetes}", reservaCompletaDto.Paquetes.Count);
+            _logger.LogInformation("   - Servicios: {Servicios}", reservaCompletaDto.Servicios.Count);
+            _logger.LogInformation("   - Monto Total: {MontoTotal:C}", reservaCompleta?.MontoTotal);
+
+            return reservaCompleta!;
+        }
+        catch (Exception ex)
+        {
+            // Si algo falla al agregar servicios, registrar el error
+            _logger.LogError(ex, "❌ Error al agregar servicios a la reserva {IdReserva}. La reserva fue creada pero puede estar incompleta.", idReserva);
+
+            // Re-lanzar la excepción para que el controlador la maneje
+            throw new InvalidOperationException(
+                $"La reserva fue creada (ID: {idReserva}) pero ocurrió un error al agregar los servicios: {ex.Message}. " +
+                "Por favor, agregue los servicios manualmente o cancele la reserva.", ex);
+        }
     }
 }

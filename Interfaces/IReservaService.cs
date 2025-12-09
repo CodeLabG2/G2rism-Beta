@@ -33,6 +33,14 @@ public interface IReservaService
     Task<ReservaResponseDto> CreateReservaAsync(ReservaCreateDto reservaCreateDto);
 
     /// <summary>
+    /// Crear una reserva completa con todos los servicios en una sola transacción
+    /// Incluye: reserva base, hoteles, vuelos, paquetes y servicios adicionales
+    /// </summary>
+    /// <param name="reservaCompletaDto">Datos completos de la reserva</param>
+    /// <returns>Reserva creada con todos los servicios asociados</returns>
+    Task<ReservaResponseDto> CreateReservaCompletaAsync(ReservaCompletaCreateDto reservaCompletaDto);
+
+    /// <summary>
     /// Actualizar una reserva existente
     /// </summary>
     /// <param name="idReserva">ID de la reserva</param>

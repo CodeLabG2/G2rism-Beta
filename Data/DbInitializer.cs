@@ -325,6 +325,77 @@ public static class DbInitializer
             logger.LogInformation("✅ Roles asignados a usuarios correctamente");
 
             // ========================================
+            // 🆕 SEEDING: FORMAS DE PAGO
+            // ========================================
+
+            logger.LogInformation("💳 Creando formas de pago iniciales...");
+
+            var formasDePago = new List<FormaDePago>
+            {
+                new FormaDePago
+                {
+                    Metodo = "Efectivo",
+                    Descripcion = "Pago en efectivo al momento de la reserva",
+                    RequiereVerificacion = false,
+                    Activo = true,
+                    FechaCreacion = DateTime.Now
+                },
+                new FormaDePago
+                {
+                    Metodo = "Tarjeta de Crédito",
+                    Descripcion = "Acepta Visa, Mastercard y American Express",
+                    RequiereVerificacion = true,
+                    Activo = true,
+                    FechaCreacion = DateTime.Now
+                },
+                new FormaDePago
+                {
+                    Metodo = "Tarjeta de Débito",
+                    Descripcion = "Débito de todas las entidades bancarias",
+                    RequiereVerificacion = true,
+                    Activo = true,
+                    FechaCreacion = DateTime.Now
+                },
+                new FormaDePago
+                {
+                    Metodo = "Transferencia Bancaria",
+                    Descripcion = "Transferencia a cuenta bancaria de la empresa",
+                    RequiereVerificacion = true,
+                    Activo = true,
+                    FechaCreacion = DateTime.Now
+                },
+                new FormaDePago
+                {
+                    Metodo = "PSE",
+                    Descripcion = "Pagos Seguros en Línea",
+                    RequiereVerificacion = true,
+                    Activo = true,
+                    FechaCreacion = DateTime.Now
+                },
+                new FormaDePago
+                {
+                    Metodo = "Nequi",
+                    Descripcion = "Pago mediante billetera digital Nequi",
+                    RequiereVerificacion = true,
+                    Activo = true,
+                    FechaCreacion = DateTime.Now
+                },
+                new FormaDePago
+                {
+                    Metodo = "Daviplata",
+                    Descripcion = "Pago mediante billetera digital Daviplata",
+                    RequiereVerificacion = true,
+                    Activo = true,
+                    FechaCreacion = DateTime.Now
+                }
+            };
+
+            await context.FormasDePago.AddRangeAsync(formasDePago);
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("✅ Formas de pago creadas correctamente");
+
+            // ========================================
             // RESUMEN FINAL
             // ========================================
 
@@ -333,14 +404,24 @@ public static class DbInitializer
             logger.LogInformation("════════════════════════════════════════════");
             logger.LogInformation($"📊 Roles creados: {roles.Count}");
             logger.LogInformation($"📊 Permisos creados: {permisos.Count}");
-            logger.LogInformation($"📊 Usuarios creados: {usuarios.Count}"); // 🆕
+            logger.LogInformation($"📊 Usuarios creados: {usuarios.Count}");
+            logger.LogInformation($"📊 Formas de Pago creadas: {formasDePago.Count}");
             logger.LogInformation($"📊 Asignaciones Roles-Permisos: {asignacionesSuperAdmin.Count + asignacionesAdmin.Count + asignacionesEmpleado.Count}");
-            logger.LogInformation($"📊 Asignaciones Usuarios-Roles: 3"); // 🆕
+            logger.LogInformation($"📊 Asignaciones Usuarios-Roles: 3");
             logger.LogInformation("════════════════════════════════════════════");
             logger.LogInformation("👤 Usuarios de prueba:");
             logger.LogInformation("   • admin / Admin123! (Super Administrador)");
             logger.LogInformation("   • empleado1 / Empleado123! (Empleado)");
             logger.LogInformation("   • cliente1 / Cliente123! (Cliente)");
+            logger.LogInformation("════════════════════════════════════════════");
+            logger.LogInformation("💳 Formas de Pago disponibles:");
+            logger.LogInformation("   • Efectivo");
+            logger.LogInformation("   • Tarjeta de Crédito");
+            logger.LogInformation("   • Tarjeta de Débito");
+            logger.LogInformation("   • Transferencia Bancaria");
+            logger.LogInformation("   • PSE");
+            logger.LogInformation("   • Nequi");
+            logger.LogInformation("   • Daviplata");
             logger.LogInformation("════════════════════════════════════════════");
         }
         catch (Exception ex)

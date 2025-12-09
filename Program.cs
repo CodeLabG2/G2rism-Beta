@@ -154,12 +154,14 @@ builder.Services.AddScoped<IReservaServicioService, ReservaServicioService>();
 // ========================================
 
 builder.Services.AddScoped<IFacturaRepository, FacturaRepository>();
+builder.Services.AddScoped<IFormaDePagoRepository, FormaDePagoRepository>();
 
 // ========================================
 // REGISTRAR SERVICES - FACTURAS Y PAGOS (MÓDULO FINANCIERO)
 // ========================================
 
 builder.Services.AddScoped<IFacturaService, FacturaService>();
+builder.Services.AddScoped<IFormaDePagoService, FormaDePagoService>();
 
 // ========================================
 // CONFIGURACIÓN DE AUTENTICACIÓN JWT

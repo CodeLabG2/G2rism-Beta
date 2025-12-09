@@ -22,6 +22,7 @@ using G2rismBeta.API.DTOs.ReservaVuelo;
 using G2rismBeta.API.DTOs.ReservaPaquete;
 using G2rismBeta.API.DTOs.ReservaServicio;
 using G2rismBeta.API.DTOs.Factura;
+using G2rismBeta.API.DTOs.FormaDePago;
 
 namespace G2rismBeta.API.Mappings;
 
@@ -709,5 +710,29 @@ public class MappingProfile : Profile
         CreateMap<Reserva, ReservaBasicInfoDto>()
             .ForMember(dest => dest.NombreCliente, opt => opt.MapFrom(src =>
                 src.Cliente != null ? $"{src.Cliente.Nombre} {src.Cliente.Apellido}" : null));
+
+        // ========================================
+        // MAPEOS PARA FORMA_DE_PAGO
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<FormaDePagoCreateDto, FormaDePago>()
+            .ForMember(dest => dest.IdFormaPago, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore()) // Se establece en el servicio
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
+            .ForMember(dest => dest.Pagos, opt => opt.Ignore()); // Navegación
+
+        // UpdateDto → Modelo (para actualizar - soporta actualizaciones parciales)
+        CreateMap<FormaDePagoUpdateDto, FormaDePago>()
+            .ForMember(dest => dest.IdFormaPago, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
+            .ForMember(dest => dest.Pagos, opt => opt.Ignore())
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<FormaDePago, FormaDePagoResponseDto>()
+            .ForMember(dest => dest.EsMetodoElectronico, opt => opt.MapFrom(src => src.EsMetodoElectronico))
+            .ForMember(dest => dest.EsEfectivo, opt => opt.MapFrom(src => src.EsEfectivo));
     }
 }

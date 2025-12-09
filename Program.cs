@@ -150,6 +150,18 @@ builder.Services.AddScoped<IReservaPaqueteService, ReservaPaqueteService>();
 builder.Services.AddScoped<IReservaServicioService, ReservaServicioService>();
 
 // ========================================
+// REGISTRAR REPOSITORIES - FACTURAS Y PAGOS (MÓDULO FINANCIERO)
+// ========================================
+
+builder.Services.AddScoped<IFacturaRepository, FacturaRepository>();
+
+// ========================================
+// REGISTRAR SERVICES - FACTURAS Y PAGOS (MÓDULO FINANCIERO)
+// ========================================
+
+builder.Services.AddScoped<IFacturaService, FacturaService>();
+
+// ========================================
 // CONFIGURACIÓN DE AUTENTICACIÓN JWT
 // ========================================
 

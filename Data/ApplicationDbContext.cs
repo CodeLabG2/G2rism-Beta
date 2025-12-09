@@ -161,6 +161,25 @@ public class ApplicationDbContext : DbContext
     public DbSet<ReservaServicio> ReservasServicios { get; set; }
 
     // ========================================
+    // MÓDULO: FINANCIERO
+    // ========================================
+
+    /// <summary>
+    /// Tabla de Facturas
+    /// </summary>
+    public DbSet<Factura> Facturas { get; set; }
+
+    /// <summary>
+    /// Tabla de Formas de Pago
+    /// </summary>
+    public DbSet<FormaDePago> FormasDePago { get; set; }
+
+    /// <summary>
+    /// Tabla de Pagos
+    /// </summary>
+    public DbSet<Pago> Pagos { get; set; }
+
+    // ========================================
     // CONFIGURACIÓN AVANZADA DE ENTIDADES
     // ========================================
 
@@ -862,6 +881,135 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(rp => rp.IdPaquete)
                 .OnDelete(DeleteBehavior.Restrict) // No eliminar paquete si tiene reservas
                 .HasConstraintName("fk_reserva_paquete_paquete");
+        });
+
+        // ========================================
+        // CONFIGURACIÓN: RESERVA_SERVICIO
+        // ========================================
+        modelBuilder.Entity<ReservaServicio>(entity =>
+        {
+            // Índice en id_reserva para consultas rápidas
+            entity.HasIndex(e => e.IdReserva)
+                .HasDatabaseName("idx_reserva_servicio_reserva");
+
+            // Índice en id_servicio para consultas rápidas
+            entity.HasIndex(e => e.IdServicio)
+                .HasDatabaseName("idx_reserva_servicio_servicio");
+
+            // Índice en fecha_servicio para filtrado temporal
+            entity.HasIndex(e => e.FechaServicio)
+                .HasDatabaseName("idx_reserva_servicio_fecha");
+
+            // Índice compuesto para búsqueda de reservas de servicio
+            entity.HasIndex(e => new { e.IdServicio, e.IdReserva })
+                .HasDatabaseName("idx_reserva_servicio_servicio_reserva");
+
+            // Relación con Reserva (N:1)
+            entity.HasOne(rs => rs.Reserva)
+                .WithMany(r => r.ReservasServicios)
+                .HasForeignKey(rs => rs.IdReserva)
+                .OnDelete(DeleteBehavior.Cascade) // Si se elimina la reserva, eliminar sus servicios
+                .HasConstraintName("fk_reserva_servicio_reserva");
+
+            // Relación con ServicioAdicional (N:1)
+            entity.HasOne(rs => rs.Servicio)
+                .WithMany() // No necesitamos navegación inversa en ServicioAdicional
+                .HasForeignKey(rs => rs.IdServicio)
+                .OnDelete(DeleteBehavior.Restrict) // No eliminar servicio si tiene reservas
+                .HasConstraintName("fk_reserva_servicio_servicio");
+        });
+
+        // ========================================
+        // CONFIGURACIÓN: FACTURA
+        // ========================================
+        modelBuilder.Entity<Factura>(entity =>
+        {
+            // Índice único en número de factura
+            entity.HasIndex(e => e.NumeroFactura)
+                .IsUnique()
+                .HasDatabaseName("idx_factura_numero_unique");
+
+            // Índice en id_reserva para consultas rápidas
+            entity.HasIndex(e => e.IdReserva)
+                .HasDatabaseName("idx_factura_reserva");
+
+            // Índice en estado para filtrado
+            entity.HasIndex(e => e.Estado)
+                .HasDatabaseName("idx_factura_estado");
+
+            // Índice en fecha_emision para ordenamientos
+            entity.HasIndex(e => e.FechaEmision)
+                .HasDatabaseName("idx_factura_fecha_emision");
+
+            // Índice en fecha_vencimiento para alertas
+            entity.HasIndex(e => e.FechaVencimiento)
+                .HasDatabaseName("idx_factura_fecha_vencimiento");
+
+            // Índice compuesto para búsqueda de facturas pendientes próximas a vencer
+            entity.HasIndex(e => new { e.Estado, e.FechaVencimiento })
+                .HasDatabaseName("idx_factura_estado_vencimiento");
+
+            // Relación con Reserva (N:1)
+            entity.HasOne(f => f.Reserva)
+                .WithMany() // No necesitamos navegación inversa en Reserva por ahora
+                .HasForeignKey(f => f.IdReserva)
+                .OnDelete(DeleteBehavior.Restrict) // No eliminar reserva si tiene facturas
+                .HasConstraintName("fk_factura_reserva");
+        });
+
+        // ========================================
+        // CONFIGURACIÓN: FORMA_DE_PAGO
+        // ========================================
+        modelBuilder.Entity<FormaDePago>(entity =>
+        {
+            // Índice único en método de pago
+            entity.HasIndex(e => e.Metodo)
+                .IsUnique()
+                .HasDatabaseName("idx_forma_pago_metodo_unique");
+
+            // Índice en activo para filtrado
+            entity.HasIndex(e => e.Activo)
+                .HasDatabaseName("idx_forma_pago_activo");
+        });
+
+        // ========================================
+        // CONFIGURACIÓN: PAGO
+        // ========================================
+        modelBuilder.Entity<Pago>(entity =>
+        {
+            // Índice en id_factura para consultas rápidas
+            entity.HasIndex(e => e.IdFactura)
+                .HasDatabaseName("idx_pago_factura");
+
+            // Índice en id_forma_pago para consultas rápidas
+            entity.HasIndex(e => e.IdFormaPago)
+                .HasDatabaseName("idx_pago_forma_pago");
+
+            // Índice en estado para filtrado
+            entity.HasIndex(e => e.Estado)
+                .HasDatabaseName("idx_pago_estado");
+
+            // Índice en fecha_pago para ordenamientos
+            entity.HasIndex(e => e.FechaPago)
+                .HasDatabaseName("idx_pago_fecha_pago");
+
+            // Índice compuesto para búsqueda de pagos aprobados por factura
+            entity.HasIndex(e => new { e.IdFactura, e.Estado, e.FechaPago })
+                .HasDatabaseName("idx_pago_factura_estado_fecha");
+
+            // Relación con Factura (N:1)
+            entity.HasOne(p => p.Factura)
+                .WithMany(f => f.Pagos)
+                .HasForeignKey(p => p.IdFactura)
+                .OnDelete(DeleteBehavior.Restrict) // No eliminar factura si tiene pagos
+                .HasConstraintName("fk_pago_factura");
+
+            // Relación con FormaDePago (N:1)
+            entity.HasOne(p => p.FormaDePago)
+                .WithMany(fp => fp.Pagos)
+                .HasForeignKey(p => p.IdFormaPago)
+                .OnDelete(DeleteBehavior.Restrict) // No eliminar forma de pago si tiene pagos
+                .HasConstraintName("fk_pago_forma_pago");
         });
     }
 }

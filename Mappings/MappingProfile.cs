@@ -21,6 +21,7 @@ using G2rismBeta.API.DTOs.ReservaHotel;
 using G2rismBeta.API.DTOs.ReservaVuelo;
 using G2rismBeta.API.DTOs.ReservaPaquete;
 using G2rismBeta.API.DTOs.ReservaServicio;
+using G2rismBeta.API.DTOs.Factura;
 
 namespace G2rismBeta.API.Mappings;
 
@@ -629,5 +630,84 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.EstaCancelado, opt => opt.MapFrom(src => src.EstaCancelado))
             .ForMember(dest => dest.ServicioEjecutado, opt => opt.MapFrom(src => src.ServicioEjecutado))
             .ForMember(dest => dest.DiasHastaServicio, opt => opt.MapFrom(src => src.DiasHastaServicio));
+
+        // ========================================
+        // MAPEOS PARA FACTURA
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<FacturaCreateDto, Factura>()
+            .ForMember(dest => dest.IdFactura, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.NumeroFactura, opt => opt.Ignore()) // Se genera en el servicio
+            .ForMember(dest => dest.FechaEmision, opt => opt.Ignore()) // Se establece en el servicio
+            .ForMember(dest => dest.CufeCude, opt => opt.Ignore()) // Se genera después si es necesario
+            .ForMember(dest => dest.TipoFactura, opt => opt.Ignore()) // Se establece en el servicio
+            .ForMember(dest => dest.Estado, opt => opt.Ignore()) // Se establece en el servicio
+            .ForMember(dest => dest.Subtotal, opt => opt.Ignore()) // Se calcula en el servicio
+            .ForMember(dest => dest.Impuestos, opt => opt.Ignore()) // Se calcula en el servicio
+            .ForMember(dest => dest.Descuentos, opt => opt.Ignore()) // Se calcula en el servicio
+            .ForMember(dest => dest.Total, opt => opt.Ignore()) // Se calcula en el servicio
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore()) // Se establece en el servicio
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
+            .ForMember(dest => dest.Reserva, opt => opt.Ignore()) // Navegación
+            .ForMember(dest => dest.Pagos, opt => opt.Ignore()); // Navegación
+
+        // UpdateDto → Modelo (para actualizar - soporta actualizaciones parciales)
+        CreateMap<FacturaUpdateDto, Factura>()
+            .ForMember(dest => dest.IdFactura, opt => opt.Ignore())
+            .ForMember(dest => dest.IdReserva, opt => opt.Ignore()) // No se puede cambiar
+            .ForMember(dest => dest.NumeroFactura, opt => opt.Ignore()) // No se puede cambiar
+            .ForMember(dest => dest.FechaEmision, opt => opt.Ignore()) // No se puede cambiar
+            .ForMember(dest => dest.TipoFactura, opt => opt.Ignore()) // No se puede cambiar
+            .ForMember(dest => dest.Subtotal, opt => opt.Ignore()) // No se puede cambiar
+            .ForMember(dest => dest.Impuestos, opt => opt.Ignore()) // No se puede cambiar
+            .ForMember(dest => dest.Descuentos, opt => opt.Ignore()) // No se puede cambiar
+            .ForMember(dest => dest.Total, opt => opt.Ignore()) // No se puede cambiar
+            .ForMember(dest => dest.PorcentajeIva, opt => opt.Ignore()) // No se puede cambiar
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaModificacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.Reserva, opt => opt.Ignore()) // Navegación
+            .ForMember(dest => dest.Pagos, opt => opt.Ignore()) // Navegación
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<Factura, FacturaResponseDto>()
+            // Propiedades básicas
+            .ForMember(dest => dest.IdFactura, opt => opt.MapFrom(src => src.IdFactura))
+            .ForMember(dest => dest.IdReserva, opt => opt.MapFrom(src => src.IdReserva))
+            .ForMember(dest => dest.NumeroFactura, opt => opt.MapFrom(src => src.NumeroFactura))
+            .ForMember(dest => dest.FechaEmision, opt => opt.MapFrom(src => src.FechaEmision))
+            .ForMember(dest => dest.FechaVencimiento, opt => opt.MapFrom(src => src.FechaVencimiento))
+            .ForMember(dest => dest.ResolucionDian, opt => opt.MapFrom(src => src.ResolucionDian))
+            .ForMember(dest => dest.CufeCude, opt => opt.MapFrom(src => src.CufeCude))
+            .ForMember(dest => dest.TipoFactura, opt => opt.MapFrom(src => src.TipoFactura))
+            .ForMember(dest => dest.Estado, opt => opt.MapFrom(src => src.Estado))
+            .ForMember(dest => dest.Subtotal, opt => opt.MapFrom(src => src.Subtotal))
+            .ForMember(dest => dest.Impuestos, opt => opt.MapFrom(src => src.Impuestos))
+            .ForMember(dest => dest.PorcentajeIva, opt => opt.MapFrom(src => src.PorcentajeIva))
+            .ForMember(dest => dest.Descuentos, opt => opt.MapFrom(src => src.Descuentos))
+            .ForMember(dest => dest.Total, opt => opt.MapFrom(src => src.Total))
+            .ForMember(dest => dest.Observaciones, opt => opt.MapFrom(src => src.Observaciones))
+            .ForMember(dest => dest.FechaCreacion, opt => opt.MapFrom(src => src.FechaCreacion))
+            .ForMember(dest => dest.FechaModificacion, opt => opt.MapFrom(src => src.FechaModificacion))
+            // Propiedades computadas
+            .ForMember(dest => dest.EstaPagada, opt => opt.MapFrom(src => src.EstaPagada))
+            .ForMember(dest => dest.EstaPendiente, opt => opt.MapFrom(src => src.EstaPendiente))
+            .ForMember(dest => dest.EstaCancelada, opt => opt.MapFrom(src => src.EstaCancelada))
+            .ForMember(dest => dest.EstaVencida, opt => opt.MapFrom(src => src.EstaVencida))
+            .ForMember(dest => dest.DiasHastaVencimiento, opt => opt.MapFrom(src => src.DiasHastaVencimiento))
+            .ForMember(dest => dest.MontoPagado, opt => opt.MapFrom(src => src.MontoPagado))
+            .ForMember(dest => dest.SaldoPendiente, opt => opt.MapFrom(src => src.SaldoPendiente))
+            .ForMember(dest => dest.PorcentajePagado, opt => opt.MapFrom(src => src.PorcentajePagado))
+            .ForMember(dest => dest.TienePagosParciales, opt => opt.MapFrom(src => src.TienePagosParciales))
+            .ForMember(dest => dest.BaseGravable, opt => opt.MapFrom(src => src.BaseGravable))
+            // Información relacionada (opcional, se mapea manualmente si es necesario)
+            .ForMember(dest => dest.Reserva, opt => opt.Ignore())
+            .ForMember(dest => dest.Pagos, opt => opt.Ignore());
+
+        // Mapeo para información básica de reserva (para incluir en FacturaResponseDto)
+        CreateMap<Reserva, ReservaBasicInfoDto>()
+            .ForMember(dest => dest.NombreCliente, opt => opt.MapFrom(src =>
+                src.Cliente != null ? $"{src.Cliente.Nombre} {src.Cliente.Apellido}" : null));
     }
 }

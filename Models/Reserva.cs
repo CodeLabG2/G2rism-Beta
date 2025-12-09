@@ -176,8 +176,11 @@ public class Reserva
     /// </summary>
     public virtual ICollection<ReservaServicio> ReservasServicios { get; set; } = new List<ReservaServicio>();
 
-    // TODO: Agregar en Día 5
-    // public virtual ICollection<Factura> Facturas { get; set; } = new List<Factura>();
+    /// <summary>
+    /// Facturas generadas para esta reserva (relación 1:N)
+    /// Una reserva puede tener múltiples facturas (en caso de modificaciones, notas de crédito, etc.)
+    /// </summary>
+    public virtual ICollection<Factura> Facturas { get; set; } = new List<Factura>();
 
     #endregion
 

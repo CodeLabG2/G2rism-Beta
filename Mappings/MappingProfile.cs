@@ -16,6 +16,7 @@ using G2rismBeta.API.DTOs.Vuelo;
 using G2rismBeta.API.DTOs.Hotel;
 using G2rismBeta.API.DTOs.ServicioAdicional;
 using G2rismBeta.API.DTOs.PaqueteTuristico;
+using G2rismBeta.API.DTOs.Reserva;
 
 namespace G2rismBeta.API.Mappings;
 
@@ -462,5 +463,57 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.DuracionFormateada, opt => opt.MapFrom(src => src.DuracionFormateada))
             .ForMember(dest => dest.PrecioFormateado, opt => opt.MapFrom(src => src.PrecioFormateado))
             .ForMember(dest => dest.EstadoDisponibilidad, opt => opt.MapFrom(src => src.EstadoDisponibilidad));
+
+        // ========================================
+        // MAPEOS PARA RESERVA
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<ReservaCreateDto, Reserva>()
+            .ForMember(dest => dest.IdReserva, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.MontoTotal, opt => opt.MapFrom(src => 0)) // Se calcula al agregar servicios
+            .ForMember(dest => dest.MontoPagado, opt => opt.MapFrom(src => 0))
+            .ForMember(dest => dest.SaldoPendiente, opt => opt.MapFrom(src => 0))
+            .ForMember(dest => dest.FechaHora, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
+            .ForMember(dest => dest.Cliente, opt => opt.Ignore())
+            .ForMember(dest => dest.Empleado, opt => opt.Ignore());
+            // TODO: Descomentar en Día 3 Tarea 2-4
+            // .ForMember(dest => dest.ReservasHoteles, opt => opt.Ignore())
+            // .ForMember(dest => dest.ReservasVuelos, opt => opt.Ignore())
+            // .ForMember(dest => dest.ReservasPaquetes, opt => opt.Ignore())
+            // .ForMember(dest => dest.ReservasServicios, opt => opt.Ignore());
+
+        // UpdateDto → Modelo (para actualizar - soporta actualizaciones parciales)
+        CreateMap<ReservaUpdateDto, Reserva>()
+            .ForMember(dest => dest.IdReserva, opt => opt.Ignore())
+            .ForMember(dest => dest.IdCliente, opt => opt.Ignore()) // No se puede cambiar el cliente
+            .ForMember(dest => dest.MontoTotal, opt => opt.Ignore()) // Se calcula automáticamente
+            .ForMember(dest => dest.MontoPagado, opt => opt.Ignore()) // Se actualiza con pagos
+            .ForMember(dest => dest.SaldoPendiente, opt => opt.Ignore()) // Se calcula automáticamente
+            .ForMember(dest => dest.FechaHora, opt => opt.Ignore()) // No se modifica
+            .ForMember(dest => dest.FechaModificacion, opt => opt.MapFrom(src => DateTime.Now))
+            .ForMember(dest => dest.Cliente, opt => opt.Ignore())
+            .ForMember(dest => dest.Empleado, opt => opt.Ignore())
+            // TODO: Descomentar en Día 3 Tarea 2-4
+            // .ForMember(dest => dest.ReservasHoteles, opt => opt.Ignore())
+            // .ForMember(dest => dest.ReservasVuelos, opt => opt.Ignore())
+            // .ForMember(dest => dest.ReservasPaquetes, opt => opt.Ignore())
+            // .ForMember(dest => dest.ReservasServicios, opt => opt.Ignore())
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<Reserva, ReservaResponseDto>()
+            .ForMember(dest => dest.NombreCliente, opt => opt.MapFrom(src =>
+                src.Cliente != null ? $"{src.Cliente.Nombre} {src.Cliente.Apellido}" : ""))
+            .ForMember(dest => dest.NombreEmpleado, opt => opt.MapFrom(src =>
+                src.Empleado != null ? $"{src.Empleado.Nombre} {src.Empleado.Apellido}" : ""))
+            .ForMember(dest => dest.DuracionDias, opt => opt.MapFrom(src => src.DuracionDias))
+            .ForMember(dest => dest.PorcentajePagado, opt => opt.MapFrom(src => src.PorcentajePagado))
+            .ForMember(dest => dest.EstaPagada, opt => opt.MapFrom(src => src.EstaPagada))
+            .ForMember(dest => dest.TieneSaldoPendiente, opt => opt.MapFrom(src => src.TieneSaldoPendiente))
+            .ForMember(dest => dest.ViajeIniciado, opt => opt.MapFrom(src => src.ViajeIniciado))
+            .ForMember(dest => dest.ViajeCompleto, opt => opt.MapFrom(src => src.ViajeCompleto))
+            .ForMember(dest => dest.DiasHastaViaje, opt => opt.MapFrom(src => src.DiasHastaViaje));
     }
 }

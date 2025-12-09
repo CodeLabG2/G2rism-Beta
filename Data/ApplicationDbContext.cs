@@ -132,6 +132,21 @@ public class ApplicationDbContext : DbContext
     public DbSet<PaqueteTuristico> PaquetesTuristicos { get; set; }
 
     // ========================================
+    // MÓDULO: RESERVAS
+    // ========================================
+
+    /// <summary>
+    /// Tabla principal de Reservas
+    /// </summary>
+    public DbSet<Reserva> Reservas { get; set; }
+
+    // TODO: Agregar tablas intermedias en Día 3 Tarea 2-4
+    // public DbSet<ReservaHotel> ReservasHoteles { get; set; }
+    // public DbSet<ReservaVuelo> ReservasVuelos { get; set; }
+    // public DbSet<ReservaPaquete> ReservasPaquetes { get; set; }
+    // public DbSet<ReservaServicio> ReservasServicios { get; set; }
+
+    // ========================================
     // CONFIGURACIÓN AVANZADA DE ENTIDADES
     // ========================================
 
@@ -673,6 +688,62 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(h => h.IdProveedor)
                 .OnDelete(DeleteBehavior.Restrict) // No eliminar proveedor si tiene hoteles
                 .HasConstraintName("fk_hotel_proveedor");
+        });
+
+        // ========================================
+        // CONFIGURACIÓN: RESERVA
+        // ========================================
+        modelBuilder.Entity<Reserva>(entity =>
+        {
+            // Índice en id_cliente para consultas por cliente
+            entity.HasIndex(e => e.IdCliente)
+                .HasDatabaseName("idx_reserva_cliente");
+
+            // Índice en id_empleado para consultas por empleado
+            entity.HasIndex(e => e.IdEmpleado)
+                .HasDatabaseName("idx_reserva_empleado");
+
+            // Índice en estado para filtrado de reservas
+            entity.HasIndex(e => e.Estado)
+                .HasDatabaseName("idx_reserva_estado");
+
+            // Índice en fecha_inicio_viaje para consultas temporales
+            entity.HasIndex(e => e.FechaInicioViaje)
+                .HasDatabaseName("idx_reserva_fecha_inicio");
+
+            // Índice en fecha_fin_viaje
+            entity.HasIndex(e => e.FechaFinViaje)
+                .HasDatabaseName("idx_reserva_fecha_fin");
+
+            // Índice compuesto para búsqueda de reservas activas por cliente
+            entity.HasIndex(e => new { e.IdCliente, e.Estado, e.FechaInicioViaje })
+                .HasDatabaseName("idx_reserva_cliente_estado_fecha");
+
+            // Índice compuesto para búsqueda de reservas por rango de fechas
+            entity.HasIndex(e => new { e.FechaInicioViaje, e.FechaFinViaje, e.Estado })
+                .HasDatabaseName("idx_reserva_fechas_estado");
+
+            // Índice en fecha_hora (creación) para auditoría
+            entity.HasIndex(e => e.FechaHora)
+                .HasDatabaseName("idx_reserva_fecha_creacion");
+
+            // Relación con Cliente (N:1)
+            entity.HasOne(r => r.Cliente)
+                .WithMany() // No necesitamos navegación inversa en Cliente por ahora
+                .HasForeignKey(r => r.IdCliente)
+                .OnDelete(DeleteBehavior.Restrict) // No eliminar cliente si tiene reservas
+                .HasConstraintName("fk_reserva_cliente");
+
+            // Relación con Empleado (N:1)
+            entity.HasOne(r => r.Empleado)
+                .WithMany() // No necesitamos navegación inversa en Empleado por ahora
+                .HasForeignKey(r => r.IdEmpleado)
+                .OnDelete(DeleteBehavior.Restrict) // No eliminar empleado si tiene reservas asignadas
+                .HasConstraintName("fk_reserva_empleado");
+
+            // TODO: Agregar configuración de relaciones con servicios en Día 3 Tarea 2-4
+            // Las relaciones con ReservaHotel, ReservaVuelo, ReservaPaquete, ReservaServicio
+            // se configurarán cuando se creen esas tablas intermedias
         });
     }
 }

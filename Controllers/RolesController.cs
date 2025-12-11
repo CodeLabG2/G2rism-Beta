@@ -363,18 +363,21 @@ public class RolesController : ControllerBase
     }
 
     /// <summary>
-    /// Asignar múltiples permisos a un rol (reemplaza los permisos anteriores)
+    /// Asignar múltiples permisos a un rol (agrega permisos nuevos sin eliminar los existentes)
     /// </summary>
     /// <param name="id">ID del rol</param>
     /// <param name="asignarPermisosDto">Lista de IDs de permisos a asignar</param>
     /// <remarks>
+    /// IMPORTANTE: Este endpoint AGREGA permisos al rol sin eliminar los existentes.
+    /// Si un permiso ya está asignado, se ignora (no se duplica).
+    ///
     /// Ejemplo de request:
-    /// 
+    ///
     ///     POST /api/roles/1/permisos
     ///     {
     ///         "idsPermisos": [1, 2, 3, 5, 8]
     ///     }
-    /// 
+    ///
     /// </remarks>
     /// <response code="200">Permisos asignados exitosamente</response>
     /// <response code="400">Datos inválidos</response>
@@ -392,16 +395,26 @@ public class RolesController : ControllerBase
                 return BadRequest(ModelState);
             }
 
-            var resultado = await _rolService.AsignarPermisosAsync(id, asignarPermisosDto.IdsPermisos);
+            var cantidadAgregados = await _rolService.AsignarPermisosAsync(id, asignarPermisosDto.IdsPermisos);
 
-            if (!resultado)
+            // Calcular cuántos permisos ya existían
+            var cantidadDuplicados = asignarPermisosDto.IdsPermisos.Count - cantidadAgregados;
+
+            if (cantidadAgregados == 0)
             {
-                return BadRequest(new { message = "No se pudieron asignar los permisos" });
+                return Ok(new
+                {
+                    message = "Todos los permisos ya estaban asignados al rol",
+                    permisosAgregados = 0,
+                    permisosDuplicados = cantidadDuplicados
+                });
             }
 
             return Ok(new
             {
-                message = $"Se asignaron {asignarPermisosDto.IdsPermisos.Count} permiso(s) al rol"
+                message = $"Se agregaron {cantidadAgregados} permiso(s) nuevo(s) al rol",
+                permisosAgregados = cantidadAgregados,
+                permisosDuplicados = cantidadDuplicados
             });
         }
         catch (ArgumentException ex)

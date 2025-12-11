@@ -33,9 +33,10 @@ public interface IRolPermisoRepository
     Task<bool> RolTienePermisoAsync(int idRol, int idPermiso);
 
     /// <summary>
-    /// Asignar múltiples permisos a un rol (reemplaza los existentes)
+    /// Asignar múltiples permisos a un rol (solo agrega los nuevos)
+    /// Retorna la cantidad de permisos nuevos agregados
     /// </summary>
-    Task<bool> AsignarPermisosMultiplesAsync(int idRol, List<int> idsPermisos);
+    Task<int> AsignarPermisosMultiplesAsync(int idRol, List<int> idsPermisos);
 
     /// <summary>
     /// Remover todos los permisos de un rol

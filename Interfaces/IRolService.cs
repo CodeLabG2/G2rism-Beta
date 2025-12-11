@@ -68,9 +68,10 @@ public interface IRolService
     Task<bool> CambiarEstadoRolAsync(int idRol, bool nuevoEstado);
 
     /// <summary>
-    /// Asignar permisos a un rol
+    /// Asignar permisos a un rol (solo agrega nuevos, no elimina existentes)
+    /// Retorna la cantidad de permisos nuevos agregados
     /// </summary>
-    Task<bool> AsignarPermisosAsync(int idRol, List<int> idsPermisos);
+    Task<int> AsignarPermisosAsync(int idRol, List<int> idsPermisos);
 
     /// <summary>
     /// Remover un permiso específico de un rol

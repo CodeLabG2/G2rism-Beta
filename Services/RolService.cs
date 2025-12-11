@@ -321,8 +321,10 @@ public class RolService : IRolService
 
     /// <summary>
     /// Asignar múltiples permisos a un rol
+    /// IMPORTANTE: Solo agrega permisos nuevos, NO elimina los existentes
+    /// Retorna la cantidad de permisos nuevos agregados
     /// </summary>
-    public async Task<bool> AsignarPermisosAsync(int idRol, List<int> idsPermisos)
+    public async Task<int> AsignarPermisosAsync(int idRol, List<int> idsPermisos)
     {
         // ========================================
         // VALIDACIONES
@@ -355,11 +357,11 @@ public class RolService : IRolService
         // ASIGNAR PERMISOS
         // ========================================
 
-        // 4. Asignar todos los permisos (reemplaza los anteriores)
-        var resultado = await _rolPermisoRepository.AsignarPermisosMultiplesAsync(idRol, idsPermisos);
+        // 4. Asignar todos los permisos (solo agrega los nuevos, mantiene los existentes)
+        var cantidadAgregados = await _rolPermisoRepository.AsignarPermisosMultiplesAsync(idRol, idsPermisos);
         await _rolPermisoRepository.SaveChangesAsync();
 
-        return resultado;
+        return cantidadAgregados;
     }
 
     /// <summary>

@@ -92,15 +92,30 @@ namespace G2rismBeta.API.Repositories;
     }
 
     /// <summary>
-    /// Asignar múltiples permisos a un rol (reemplaza asignaciones existentes)
+    /// Asignar múltiples permisos a un rol (solo agrega permisos nuevos, no elimina los existentes)
+    /// Retorna la cantidad de permisos nuevos agregados
     /// </summary>
-    public async Task<bool> AsignarPermisosMultiplesAsync(int idRol, List<int> idsPermisos)
+    public async Task<int> AsignarPermisosMultiplesAsync(int idRol, List<int> idsPermisos)
     {
-        // Primero, remover todos los permisos actuales
-        await RemoverTodosLosPermisosAsync(idRol);
+        // Obtener los permisos que ya están asignados
+        var permisosExistentes = await _context.RolesPermisos
+            .Where(rp => rp.IdRol == idRol)
+            .Select(rp => rp.IdPermiso)
+            .ToListAsync();
 
-        // Agregar los nuevos permisos
-        var nuevasAsignaciones = idsPermisos.Select(idPermiso => new RolPermiso
+        // Filtrar solo los permisos que NO están asignados (para evitar duplicados)
+        var permisosNuevos = idsPermisos
+            .Where(idPermiso => !permisosExistentes.Contains(idPermiso))
+            .ToList();
+
+        // Si no hay permisos nuevos para agregar, retornar 0
+        if (!permisosNuevos.Any())
+        {
+            return 0;
+        }
+
+        // Agregar solo los permisos nuevos
+        var nuevasAsignaciones = permisosNuevos.Select(idPermiso => new RolPermiso
         {
             IdRol = idRol,
             IdPermiso = idPermiso,
@@ -108,7 +123,9 @@ namespace G2rismBeta.API.Repositories;
         }).ToList();
 
         await _context.RolesPermisos.AddRangeAsync(nuevasAsignaciones);
-        return true;
+
+        // Retornar la cantidad de permisos agregados
+        return permisosNuevos.Count;
     }
 
     /// <summary>

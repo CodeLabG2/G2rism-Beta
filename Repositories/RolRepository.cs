@@ -15,6 +15,27 @@ public class RolRepository : GenericRepository<Rol>, IRolRepository
     }
 
     /// <summary>
+    /// Obtener todos los roles con sus permisos incluidos
+    /// </summary>
+    public override async Task<IEnumerable<Rol>> GetAllAsync()
+    {
+        return await _dbSet
+            .Include(r => r.RolesPermisos)
+            .OrderBy(r => r.NivelAcceso)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Obtener un rol por su ID con sus permisos incluidos
+    /// </summary>
+    public override async Task<Rol?> GetByIdAsync(int id)
+    {
+        return await _dbSet
+            .Include(r => r.RolesPermisos)
+            .FirstOrDefaultAsync(r => r.IdRol == id);
+    }
+
+    /// <summary>
     /// Buscar rol por nombre (case insensitive)
     /// </summary>
     public async Task<Rol?> GetByNombreAsync(string nombre)
@@ -24,22 +45,24 @@ public class RolRepository : GenericRepository<Rol>, IRolRepository
     }
 
     /// <summary>
-    /// Obtener solo los roles activos
+    /// Obtener solo los roles activos con sus permisos incluidos
     /// </summary>
     public async Task<IEnumerable<Rol>> GetRolesActivosAsync()
     {
         return await _dbSet
+            .Include(r => r.RolesPermisos)
             .Where(r => r.Estado == true)
             .OrderBy(r => r.NivelAcceso)
             .ToListAsync();
     }
 
     /// <summary>
-    /// Obtener roles por nivel de acceso específico
+    /// Obtener roles por nivel de acceso específico con sus permisos incluidos
     /// </summary>
     public async Task<IEnumerable<Rol>> GetByNivelAccesoAsync(int nivelAcceso)
     {
         return await _dbSet
+            .Include(r => r.RolesPermisos)
             .Where(r => r.NivelAcceso == nivelAcceso)
             .ToListAsync();
     }

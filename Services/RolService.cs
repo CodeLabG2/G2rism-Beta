@@ -153,7 +153,8 @@ public class RolService : IRolService
     }
 
     /// <summary>
-    /// Actualizar un rol existente
+    /// Actualizar un rol existente (soporta actualizaciones parciales)
+    /// Solo actualiza los campos que se envíen en el DTO (no nulos)
     /// </summary>
     public async Task<RolResponseDto> UpdateRolAsync(int idRol, RolUpdateDto rolUpdateDto)
     {
@@ -168,42 +169,74 @@ public class RolService : IRolService
             throw new KeyNotFoundException($"No se encontró el rol con ID {idRol}");
         }
 
-        // 2. Validar nombre vacío
-        if (string.IsNullOrWhiteSpace(rolUpdateDto.Nombre))
+        // 2. Validar que al menos un campo se está actualizando
+        if (rolUpdateDto.Nombre == null &&
+            rolUpdateDto.Descripcion == null &&
+            rolUpdateDto.NivelAcceso == null &&
+            rolUpdateDto.Estado == null)
         {
-            throw new ArgumentException("El nombre del rol es obligatorio");
+            throw new ArgumentException("Debe proporcionar al menos un campo para actualizar");
         }
 
-        // 3. Validar que el nuevo nombre no exista (excluyendo el rol actual)
-        var nombreExiste = await _rolRepository.ExisteNombreAsync(
-            rolUpdateDto.Nombre,
-            idRol);
-        if (nombreExiste)
+        // 3. Si se está actualizando el nombre, validar que no esté vacío
+        if (rolUpdateDto.Nombre != null)
         {
-            throw new InvalidOperationException($"Ya existe otro rol con el nombre '{rolUpdateDto.Nombre}'");
+            if (string.IsNullOrWhiteSpace(rolUpdateDto.Nombre))
+            {
+                throw new ArgumentException("El nombre del rol no puede estar vacío");
+            }
+
+            // 4. Validar que el nuevo nombre no exista (excluyendo el rol actual)
+            var nombreExiste = await _rolRepository.ExisteNombreAsync(
+                rolUpdateDto.Nombre,
+                idRol);
+            if (nombreExiste)
+            {
+                throw new InvalidOperationException($"Ya existe otro rol con el nombre '{rolUpdateDto.Nombre}'");
+            }
         }
 
-        // 4. Validar nivel de acceso
-        if (rolUpdateDto.NivelAcceso < 1 || rolUpdateDto.NivelAcceso > 100)
+        // 5. Validar nivel de acceso si se está actualizando
+        if (rolUpdateDto.NivelAcceso.HasValue)
         {
-            throw new ArgumentException("El nivel de acceso debe estar entre 1 y 100");
+            if (rolUpdateDto.NivelAcceso < 1 || rolUpdateDto.NivelAcceso > 100)
+            {
+                throw new ArgumentException("El nivel de acceso debe estar entre 1 y 100");
+            }
         }
 
         // ========================================
-        // ACTUALIZAR EL ROL
+        // ACTUALIZAR EL ROL (SOLO CAMPOS NO NULOS)
         // ========================================
 
-        // 5. Actualizar solo los campos permitidos
-        rolExistente.Nombre = rolUpdateDto.Nombre;
-        rolExistente.Descripcion = rolUpdateDto.Descripcion;
-        rolExistente.NivelAcceso = rolUpdateDto.NivelAcceso;
+        // 6. Actualizar solo los campos que fueron proporcionados
+        if (rolUpdateDto.Nombre != null)
+        {
+            rolExistente.Nombre = rolUpdateDto.Nombre;
+        }
+
+        if (rolUpdateDto.Descripcion != null)
+        {
+            rolExistente.Descripcion = rolUpdateDto.Descripcion;
+        }
+
+        if (rolUpdateDto.NivelAcceso.HasValue)
+        {
+            rolExistente.NivelAcceso = rolUpdateDto.NivelAcceso.Value;
+        }
+
+        if (rolUpdateDto.Estado.HasValue)
+        {
+            rolExistente.Estado = rolUpdateDto.Estado.Value;
+        }
+
         rolExistente.FechaModificacion = DateTime.Now;
 
-        // 6. Guardar cambios
+        // 7. Guardar cambios
         await _rolRepository.UpdateAsync(rolExistente);
         await _rolRepository.SaveChangesAsync();
 
-        // 7. Retornar rol actualizado
+        // 8. Retornar rol actualizado
         return _mapper.Map<RolResponseDto>(rolExistente);
     }
 

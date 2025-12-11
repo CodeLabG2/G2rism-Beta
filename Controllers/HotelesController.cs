@@ -268,7 +268,7 @@ public class HotelesController : ControllerBase
     /// <param name="hotelDto">Datos del hotel a crear</param>
     /// <returns>Hotel creado</returns>
     [HttpPost]
-    [Authorize(Policy = "PermissionPolicy")]
+    [Authorize(Policy = "RequirePermission:hoteles.crear")]
     [ProducesResponseType(typeof(ApiResponse<HotelResponseDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<HotelResponseDto>>> Create([FromBody] HotelCreateDto hotelDto)
@@ -296,7 +296,7 @@ public class HotelesController : ControllerBase
     /// <param name="hotelDto">Datos a actualizar</param>
     /// <returns>Hotel actualizado</returns>
     [HttpPut("{id}")]
-    [Authorize(Policy = "PermissionPolicy")]
+    [Authorize(Policy = "RequirePermission:hoteles.actualizar")]
     [ProducesResponseType(typeof(ApiResponse<HotelResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -323,7 +323,7 @@ public class HotelesController : ControllerBase
     /// <param name="id">ID del hotel a eliminar</param>
     /// <returns>Confirmación de eliminación</returns>
     [HttpDelete("{id}")]
-    [Authorize(Policy = "PermissionPolicy")]
+    [Authorize(Policy = "RequirePermission:hoteles.eliminar")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<object>>> Delete(int id)

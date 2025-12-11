@@ -407,7 +407,18 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.CheckInHora, opt => opt.Ignore()) // Se mapea manualmente en el service
             .ForMember(dest => dest.CheckOutHora, opt => opt.Ignore()) // Se mapea manualmente en el service
             .ForMember(dest => dest.Proveedor, opt => opt.Ignore())
-            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+            .ForMember(dest => dest.IdProveedor, opt => opt.Condition(src => src.IdProveedor.HasValue && src.IdProveedor.Value > 0))
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember, destMember) =>
+            {
+                // Si es un tipo nullable, verificar si tiene valor
+                if (srcMember == null) return false;
+
+                // Permitir actualización de booleanos nullable incluso si son false
+                var srcType = srcMember.GetType();
+                if (srcType == typeof(bool?) && srcMember != null) return true;
+
+                return true;
+            }));
 
         // Modelo → ResponseDto (para devolver)
         CreateMap<Hotel, HotelResponseDto>()

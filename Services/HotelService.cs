@@ -222,9 +222,69 @@ public class HotelService : IHotelService
             throw new ArgumentException($"Ya existe otro hotel con el nombre '{nombreActualizado}' en {ciudadActualizada}");
         }
 
-        // Actualizar campos que no sean null
-        _mapper.Map(hotelDto, hotel);
-        hotel.FechaModificacion = DateTime.Now;
+        // Actualizar campos individualmente solo si no son null
+        if (hotelDto.IdProveedor.HasValue && hotelDto.IdProveedor.Value > 0)
+            hotel.IdProveedor = hotelDto.IdProveedor.Value;
+
+        if (!string.IsNullOrEmpty(hotelDto.Nombre))
+            hotel.Nombre = hotelDto.Nombre;
+
+        if (!string.IsNullOrEmpty(hotelDto.Ciudad))
+            hotel.Ciudad = hotelDto.Ciudad;
+
+        if (hotelDto.Pais != null)
+            hotel.Pais = hotelDto.Pais;
+
+        if (!string.IsNullOrEmpty(hotelDto.Direccion))
+            hotel.Direccion = hotelDto.Direccion;
+
+        if (hotelDto.Contacto != null)
+            hotel.Contacto = hotelDto.Contacto;
+
+        if (hotelDto.Descripcion != null)
+            hotel.Descripcion = hotelDto.Descripcion;
+
+        if (hotelDto.Categoria != null)
+            hotel.Categoria = hotelDto.Categoria;
+
+        if (hotelDto.Estrellas.HasValue)
+            hotel.Estrellas = hotelDto.Estrellas.Value;
+
+        if (hotelDto.PrecioPorNoche.HasValue)
+            hotel.PrecioPorNoche = hotelDto.PrecioPorNoche.Value;
+
+        if (hotelDto.CapacidadPorHabitacion.HasValue)
+            hotel.CapacidadPorHabitacion = hotelDto.CapacidadPorHabitacion.Value;
+
+        if (hotelDto.NumeroHabitaciones.HasValue)
+            hotel.NumeroHabitaciones = hotelDto.NumeroHabitaciones.Value;
+
+        if (hotelDto.TieneWifi.HasValue)
+            hotel.TieneWifi = hotelDto.TieneWifi.Value;
+
+        if (hotelDto.TienePiscina.HasValue)
+            hotel.TienePiscina = hotelDto.TienePiscina.Value;
+
+        if (hotelDto.TieneRestaurante.HasValue)
+            hotel.TieneRestaurante = hotelDto.TieneRestaurante.Value;
+
+        if (hotelDto.TieneGimnasio.HasValue)
+            hotel.TieneGimnasio = hotelDto.TieneGimnasio.Value;
+
+        if (hotelDto.TieneParqueadero.HasValue)
+            hotel.TieneParqueadero = hotelDto.TieneParqueadero.Value;
+
+        if (hotelDto.PoliticasCancelacion != null)
+            hotel.PoliticasCancelacion = hotelDto.PoliticasCancelacion;
+
+        if (hotelDto.Fotos != null)
+            hotel.Fotos = hotelDto.Fotos;
+
+        if (hotelDto.ServiciosIncluidos != null)
+            hotel.ServiciosIncluidos = hotelDto.ServiciosIncluidos;
+
+        if (hotelDto.Estado.HasValue)
+            hotel.Estado = hotelDto.Estado.Value;
 
         // Actualizar horas si se proporcionaron
         if (!string.IsNullOrEmpty(hotelDto.CheckInHora) && TimeSpan.TryParse(hotelDto.CheckInHora, out var checkIn))
@@ -236,6 +296,8 @@ public class HotelService : IHotelService
         {
             hotel.CheckOutHora = checkOut;
         }
+
+        hotel.FechaModificacion = DateTime.Now;
 
         await _hotelRepository.UpdateAsync(hotel);
         await _hotelRepository.SaveChangesAsync();

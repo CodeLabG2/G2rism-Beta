@@ -23,6 +23,7 @@ using G2rismBeta.API.DTOs.ReservaPaquete;
 using G2rismBeta.API.DTOs.ReservaServicio;
 using G2rismBeta.API.DTOs.Factura;
 using G2rismBeta.API.DTOs.FormaDePago;
+using G2rismBeta.API.DTOs.Pago;
 
 namespace G2rismBeta.API.Mappings;
 
@@ -734,5 +735,41 @@ public class MappingProfile : Profile
         CreateMap<FormaDePago, FormaDePagoResponseDto>()
             .ForMember(dest => dest.EsMetodoElectronico, opt => opt.MapFrom(src => src.EsMetodoElectronico))
             .ForMember(dest => dest.EsEfectivo, opt => opt.MapFrom(src => src.EsEfectivo));
+
+        // ========================================
+        // MAPEOS PARA PAGO
+        // ========================================
+
+        // CreateDto → Modelo (para crear)
+        CreateMap<PagoCreateDto, Pago>()
+            .ForMember(dest => dest.IdPago, opt => opt.Ignore()) // El ID lo genera la BD
+            .ForMember(dest => dest.FechaPago, opt => opt.Ignore()) // Se establece en el servicio
+            .ForMember(dest => dest.Estado, opt => opt.Ignore()) // Se normaliza en el servicio
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore()) // Se establece en el servicio
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore())
+            .ForMember(dest => dest.Factura, opt => opt.Ignore()) // Navegación
+            .ForMember(dest => dest.FormaDePago, opt => opt.Ignore()); // Navegación
+
+        // UpdateDto → Modelo (para actualizar - soporta actualizaciones parciales)
+        CreateMap<PagoUpdateDto, Pago>()
+            .ForMember(dest => dest.IdPago, opt => opt.Ignore())
+            .ForMember(dest => dest.IdFactura, opt => opt.Ignore()) // No se puede cambiar la factura
+            .ForMember(dest => dest.IdFormaPago, opt => opt.Ignore()) // No se puede cambiar la forma de pago
+            .ForMember(dest => dest.FechaPago, opt => opt.Ignore()) // No se puede cambiar la fecha de pago
+            .ForMember(dest => dest.FechaCreacion, opt => opt.Ignore())
+            .ForMember(dest => dest.FechaModificacion, opt => opt.Ignore()) // Se establece en el servicio
+            .ForMember(dest => dest.Factura, opt => opt.Ignore())
+            .ForMember(dest => dest.FormaDePago, opt => opt.Ignore())
+            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Modelo → ResponseDto (para devolver)
+        CreateMap<Pago, PagoResponseDto>()
+            .ForMember(dest => dest.NumeroFactura, opt => opt.MapFrom(src => src.Factura != null ? src.Factura.NumeroFactura : null))
+            .ForMember(dest => dest.MetodoPago, opt => opt.MapFrom(src => src.FormaDePago != null ? src.FormaDePago.Metodo : null))
+            .ForMember(dest => dest.EstaAprobado, opt => opt.MapFrom(src => src.EstaAprobado))
+            .ForMember(dest => dest.EstaPendiente, opt => opt.MapFrom(src => src.EstaPendiente))
+            .ForMember(dest => dest.EstaRechazado, opt => opt.MapFrom(src => src.EstaRechazado))
+            .ForMember(dest => dest.DiasDesdeElPago, opt => opt.MapFrom(src => src.DiasDesdeElPago))
+            .ForMember(dest => dest.TieneComprobante, opt => opt.MapFrom(src => src.TieneComprobante));
     }
 }

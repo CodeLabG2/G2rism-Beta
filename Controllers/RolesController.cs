@@ -9,11 +9,10 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador para la gestión de Roles
 /// Endpoints para operaciones CRUD de roles y asignación de permisos
-/// Requiere autenticación. Solo accesible para Super Administrador y Administrador.
+/// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Super Administrador,Administrador")]
 public class RolesController : ControllerBase
 {
     private readonly IRolService _rolService;

@@ -9,11 +9,10 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador para gestión de Contratos con Proveedores
 /// Maneja la creación, consulta, actualización y gestión del ciclo de vida de contratos
-/// Requiere autenticación. Accesible para empleados (Super Admin, Admin, Empleado).
+/// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Super Administrador,Administrador,Empleado")]
 public class ContratosProveedorController : ControllerBase
 {
     private readonly IContratoProveedorService _contratoService;
@@ -36,6 +35,7 @@ public class ContratosProveedorController : ControllerBase
     /// </summary>
     /// <returns>Lista de todos los contratos</returns>
     [HttpGet]
+    [Authorize(Policy = "RequirePermission:contratos_proveedor.leer")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ContratoProveedorResponseDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<IEnumerable<ContratoProveedorResponseDto>>>> GetAllContratos()
     {
@@ -113,6 +113,7 @@ public class ContratosProveedorController : ControllerBase
     /// <param name="contratoDto">Datos del contrato a crear</param>
     /// <returns>Contrato creado</returns>
     [HttpPost]
+    [Authorize(Policy = "RequirePermission:contratos_proveedor.crear")]
     [ProducesResponseType(typeof(ApiResponse<ContratoProveedorResponseDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<ContratoProveedorResponseDto>>> CreateContrato(
@@ -183,6 +184,7 @@ public class ContratosProveedorController : ControllerBase
     /// <param name="contratoDto">Datos actualizados del contrato</param>
     /// <returns>Contrato actualizado</returns>
     [HttpPut("{id}")]
+    [Authorize(Policy = "RequirePermission:contratos_proveedor.actualizar")]
     [ProducesResponseType(typeof(ApiResponse<ContratoProveedorResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -249,6 +251,7 @@ public class ContratosProveedorController : ControllerBase
     /// <param name="id">ID del contrato</param>
     /// <returns>Confirmación de eliminación</returns>
     [HttpDelete("{id}")]
+    [Authorize(Policy = "RequirePermission:contratos_proveedor.eliminar")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]

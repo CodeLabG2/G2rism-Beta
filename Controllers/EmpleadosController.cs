@@ -8,11 +8,11 @@ namespace G2rismBeta.API.Controllers
 {
     /// <summary>
     /// Controlador para la gestión de empleados y jerarquía organizacional
-    /// Requiere autenticación. Solo accesible para Super Administrador y Administrador.
+    /// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Super Administrador,Administrador,Empleado")]
+    [Authorize]
     public class EmpleadosController : ControllerBase
     {
         private readonly IEmpleadoService _empleadoService;
@@ -32,6 +32,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de todos los empleados del sistema</returns>
         /// <response code="200">Lista de empleados obtenida exitosamente</response>
         [HttpGet]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetAllEmpleados()
         {
@@ -61,6 +62,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de empleados con estado activo</returns>
         /// <response code="200">Lista de empleados activos obtenida exitosamente</response>
         [HttpGet("activos")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetEmpleadosActivos()
         {
@@ -92,6 +94,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Empleado encontrado exitosamente</response>
         /// <response code="404">Empleado no encontrado</response>
         [HttpGet("{id}")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<EmpleadoResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<EmpleadoResponseDto>>> GetEmpleadoById(int id)
@@ -133,6 +136,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Empleado completo encontrado exitosamente</response>
         /// <response code="404">Empleado no encontrado</response>
         [HttpGet("{id}/completo")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<EmpleadoResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<EmpleadoResponseDto>>> GetEmpleadoCompleto(int id)
@@ -174,6 +178,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="201">Empleado creado exitosamente</response>
         /// <response code="400">Datos inválidos o validación fallida</response>
         [HttpPost]
+        [Authorize(Policy = "RequirePermission:empleados.crear")]
         [ProducesResponseType(typeof(ApiResponse<EmpleadoResponseDto>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<EmpleadoResponseDto>>> CreateEmpleado(
@@ -221,6 +226,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="400">Datos inválidos o validación fallida</response>
         /// <response code="404">Empleado no encontrado</response>
         [HttpPut("{id}")]
+        [Authorize(Policy = "RequirePermission:empleados.actualizar")]
         [ProducesResponseType(typeof(ApiResponse<EmpleadoResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -275,6 +281,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="400">No se puede eliminar porque tiene subordinados</response>
         /// <response code="404">Empleado no encontrado</response>
         [HttpDelete("{id}")]
+        [Authorize(Policy = "RequirePermission:empleados.eliminar")]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -329,6 +336,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Empleado encontrado exitosamente</response>
         /// <response code="404">Empleado no encontrado</response>
         [HttpGet("documento/{documento}")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<EmpleadoResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<EmpleadoResponseDto>>> GetEmpleadoByDocumento(string documento)
@@ -369,6 +377,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de empleados que coinciden con el término de búsqueda</returns>
         /// <response code="200">Búsqueda realizada exitosamente</response>
         [HttpGet("buscar/{termino}")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> BuscarEmpleados(string termino)
         {
@@ -400,6 +409,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de empleados con el cargo especificado</returns>
         /// <response code="200">Empleados filtrados exitosamente</response>
         [HttpGet("cargo/{cargo}")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetEmpleadosPorCargo(string cargo)
         {
@@ -431,6 +441,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de empleados con el estado especificado</returns>
         /// <response code="200">Empleados filtrados exitosamente</response>
         [HttpGet("estado/{estado}")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetEmpleadosPorEstado(string estado)
         {
@@ -466,6 +477,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de empleados que reportan directamente al jefe especificado</returns>
         /// <response code="200">Subordinados obtenidos exitosamente</response>
         [HttpGet("{idJefe}/subordinados")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetSubordinadosDirectos(int idJefe)
         {
@@ -497,6 +509,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista completa de todos los subordinados en la jerarquía</returns>
         /// <response code="200">Todos los subordinados obtenidos exitosamente</response>
         [HttpGet("{idJefe}/subordinados/todos")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetTodosLosSubordinados(int idJefe)
         {
@@ -529,6 +542,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Jefe obtenido exitosamente</response>
         /// <response code="404">El empleado no tiene jefe asignado</response>
         [HttpGet("{idEmpleado}/jefe")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<EmpleadoResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<EmpleadoResponseDto>>> GetJefeDirecto(int idEmpleado)
@@ -569,6 +583,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de jefes en orden ascendente (jefe inmediato → CEO)</returns>
         /// <response code="200">Cadena de jefes obtenida exitosamente</response>
         [HttpGet("{idEmpleado}/cadena-jefes")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetCadenaDeJefes(int idEmpleado)
         {
@@ -599,6 +614,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de empleados del nivel superior (CEO, Gerentes Generales, etc.)</returns>
         /// <response code="200">Empleados de nivel superior obtenidos exitosamente</response>
         [HttpGet("sin-jefe")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetEmpleadosSinJefe()
         {
@@ -629,6 +645,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de empleados que tienen al menos un subordinado</returns>
         /// <response code="200">Jefes obtenidos exitosamente</response>
         [HttpGet("jefes")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetEmpleadosQuesonJefes()
         {
@@ -659,6 +676,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Estructura jerárquica completa de la organización</returns>
         /// <response code="200">Organigrama obtenido exitosamente</response>
         [HttpGet("organigrama")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetOrganigramaCompleto()
         {
@@ -696,6 +714,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Jefe cambiado exitosamente</response>
         /// <response code="400">No se puede cambiar el jefe (ciclo detectado)</response>
         [HttpPut("{idEmpleado}/cambiar-jefe")]
+        [Authorize(Policy = "RequirePermission:empleados.actualizar")]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<bool>>> CambiarJefe(int idEmpleado, [FromBody] int? idNuevoJefe)
@@ -738,6 +757,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Subordinados reasignados exitosamente</response>
         /// <response code="400">Error en la reasignación</response>
         [HttpPut("{idJefeActual}/reasignar-subordinados")]
+        [Authorize(Policy = "RequirePermission:empleados.actualizar")]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<bool>>> ReasignarSubordinados(
@@ -786,6 +806,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Estado cambiado exitosamente</response>
         /// <response code="400">Estado inválido</response>
         [HttpPut("{idEmpleado}/cambiar-estado")]
+        [Authorize(Policy = "RequirePermission:empleados.actualizar")]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<bool>>> CambiarEstado(int idEmpleado, [FromBody] string nuevoEstado)
@@ -828,6 +849,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Salario actualizado exitosamente</response>
         /// <response code="400">Salario inválido</response>
         [HttpPut("{idEmpleado}/actualizar-salario")]
+        [Authorize(Policy = "RequirePermission:empleados.actualizar")]
         [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<bool>>> ActualizarSalario(int idEmpleado, [FromBody] decimal nuevoSalario)
@@ -871,6 +893,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Estadísticas por cargo, por estado y totales</returns>
         /// <response code="200">Estadísticas obtenidas exitosamente</response>
         [HttpGet("estadisticas")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<object>>> GetEstadisticas()
         {
@@ -913,6 +936,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de empleados con mayor antigüedad</returns>
         /// <response code="200">Empleados obtenidos exitosamente</response>
         [HttpGet("mayor-antiguedad")]
+        [Authorize(Policy = "RequirePermission:empleados.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EmpleadoResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<EmpleadoResponseDto>>>> GetEmpleadosConMayorAntiguedad(
             [FromQuery] int cantidad = 10)

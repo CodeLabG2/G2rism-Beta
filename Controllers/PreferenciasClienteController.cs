@@ -9,12 +9,11 @@ namespace G2rismBeta.API.Controllers
     /// <summary>
     /// Controlador para gestionar las preferencias de clientes
     /// Proporciona endpoints para el módulo CRM de seguimiento y personalización
-    /// Requiere autenticación. Los clientes solo pueden ver/modificar sus propias preferencias.
-    /// Los empleados pueden gestionar las preferencias de cualquier cliente.
+    /// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Todos los usuarios autenticados pueden acceder
+    [Authorize]
     public class PreferenciasClienteController : ControllerBase
     {
         private readonly IPreferenciaClienteService _preferenciaClienteService;
@@ -30,6 +29,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de todas las preferencias registradas</returns>
         /// <response code="200">Retorna la lista de preferencias</response>
         [HttpGet]
+        [Authorize(Policy = "RequirePermission:preferencias del cliente.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<PreferenciaClienteResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<PreferenciaClienteResponseDto>>>> GetAll()
         {
@@ -50,6 +50,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Preferencia encontrada</response>
         /// <response code="404">Preferencia no encontrada</response>
         [HttpGet("{id}")]
+        [Authorize(Policy = "RequirePermission:preferencias del cliente.leer")]
         [ProducesResponseType(typeof(ApiResponse<PreferenciaClienteResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<PreferenciaClienteResponseDto>>> GetById(int id)
@@ -81,6 +82,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Preferencias encontradas</response>
         /// <response code="404">Cliente no tiene preferencias registradas</response>
         [HttpGet("cliente/{idCliente}")]
+        [Authorize(Policy = "RequirePermission:preferencias del cliente.leer")]
         [ProducesResponseType(typeof(ApiResponse<PreferenciaClienteResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<PreferenciaClienteResponseDto>>> GetByClienteId(int idCliente)
@@ -111,6 +113,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de preferencias que coinciden con el tipo de destino</returns>
         /// <response code="200">Búsqueda realizada exitosamente</response>
         [HttpGet("buscar/destino/{tipoDestino}")]
+        [Authorize(Policy = "RequirePermission:preferencias del cliente.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<PreferenciaClienteResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<PreferenciaClienteResponseDto>>>> GetByTipoDestino(string tipoDestino)
         {
@@ -131,6 +134,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Lista de preferencias dentro del rango de presupuesto</returns>
         /// <response code="200">Búsqueda realizada exitosamente</response>
         [HttpGet("buscar/presupuesto")]
+        [Authorize(Policy = "RequirePermission:preferencias del cliente.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<PreferenciaClienteResponseDto>>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<IEnumerable<PreferenciaClienteResponseDto>>>> GetByPresupuestoRange(
             [FromQuery] decimal minimo,
@@ -153,6 +157,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="201">Preferencias creadas exitosamente</response>
         /// <response code="400">Datos inválidos o el cliente ya tiene preferencias</response>
         [HttpPost]
+        [Authorize(Policy = "RequirePermission:preferencias del cliente.crear")]
         [ProducesResponseType(typeof(ApiResponse<PreferenciaClienteResponseDto>), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ApiResponse<PreferenciaClienteResponseDto>>> Create(
@@ -180,6 +185,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Preferencias actualizadas exitosamente</response>
         /// <response code="404">Preferencia no encontrada</response>
         [HttpPut("{id}")]
+        [Authorize(Policy = "RequirePermission:preferencias del cliente.actualizar")]
         [ProducesResponseType(typeof(ApiResponse<PreferenciaClienteResponseDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<PreferenciaClienteResponseDto>>> Update(
@@ -213,6 +219,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Preferencias eliminadas exitosamente</response>
         /// <response code="404">Preferencia no encontrada</response>
         [HttpDelete("{id}")]
+        [Authorize(Policy = "RequirePermission:preferencias del cliente.eliminar")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ApiResponse<object>>> Delete(int id)
@@ -241,6 +248,7 @@ namespace G2rismBeta.API.Controllers
         /// <returns>Estadísticas agregadas</returns>
         /// <response code="200">Estadísticas obtenidas exitosamente</response>
         [HttpGet("estadisticas")]
+        [Authorize(Policy = "RequirePermission:preferencias del cliente.leer")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         public async Task<ActionResult<ApiResponse<object>>> GetEstadisticas()
         {

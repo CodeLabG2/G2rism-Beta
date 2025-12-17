@@ -8,11 +8,11 @@ namespace G2rismBeta.API.Controllers
 {
     /// <summary>
     /// Controlador para la gestión de proveedores de servicios turísticos
-    /// Requiere autenticación. Accesible para empleados (Super Admin, Admin, Empleado).
+    /// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Super Administrador,Administrador,Empleado")]
+    [Authorize]
     public class ProveedoresController : ControllerBase
     {
         private readonly IProveedorService _proveedorService;
@@ -37,6 +37,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Lista de proveedores obtenida exitosamente</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProveedorResponseDto>>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
         public async Task<ActionResult<ApiResponse<IEnumerable<ProveedorResponseDto>>>> GetAll()
@@ -62,6 +63,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="404">Proveedor no encontrado</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("{id}")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<ProveedorResponseDto>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 404)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
@@ -94,6 +96,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="400">Datos inválidos</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpPost]
+        [Authorize(Policy = "RequirePermission:proveedores.crear")]
         [ProducesResponseType(typeof(ApiResponse<ProveedorResponseDto>), 201)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
@@ -133,6 +136,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="404">Proveedor no encontrado</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpPut("{id}")]
+        [Authorize(Policy = "RequirePermission:proveedores.actualizar")]
         [ProducesResponseType(typeof(ApiResponse<ProveedorResponseDto>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 404)]
@@ -173,6 +177,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="404">Proveedor no encontrado</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpDelete("{id}")]
+        [Authorize(Policy = "RequirePermission:proveedores.eliminar")]
         [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 404)]
@@ -212,6 +217,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="404">Proveedor no encontrado</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("nit/{nitRut}")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<ProveedorResponseDto>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 404)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
@@ -244,6 +250,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="400">Parámetro de búsqueda inválido</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("buscar")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProveedorResponseDto>>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
@@ -274,6 +281,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="400">Tipo de proveedor inválido</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("tipo/{tipo}")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProveedorResponseDto>>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
@@ -302,6 +310,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Proveedores activos obtenidos exitosamente</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("activos")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProveedorResponseDto>>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
         public async Task<ActionResult<ApiResponse<IEnumerable<ProveedorResponseDto>>>> GetActivos()
@@ -327,6 +336,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="400">Parámetro de ciudad inválido</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("ciudad/{ciudad}")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProveedorResponseDto>>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
@@ -357,6 +367,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="400">Calificación inválida</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("calificacion/{calificacion}")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProveedorResponseDto>>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
@@ -393,6 +404,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="404">Proveedor no encontrado</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpPatch("{id}/estado")]
+        [Authorize(Policy = "RequirePermission:proveedores.actualizar")]
         [ProducesResponseType(typeof(ApiResponse<ProveedorResponseDto>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 404)]
@@ -434,6 +446,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="404">Proveedor no encontrado</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpPatch("{id}/calificacion")]
+        [Authorize(Policy = "RequirePermission:proveedores.actualizar")]
         [ProducesResponseType(typeof(ApiResponse<ProveedorResponseDto>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 404)]
@@ -473,6 +486,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="400">Cantidad inválida</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("top")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProveedorResponseDto>>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
@@ -501,6 +515,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Estadísticas obtenidas exitosamente</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("estadisticas/tipo")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<Dictionary<string, int>>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
         public async Task<ActionResult<ApiResponse<Dictionary<string, int>>>> GetEstadisticasPorTipo()
@@ -524,6 +539,7 @@ namespace G2rismBeta.API.Controllers
         /// <response code="200">Proveedores obtenidos exitosamente</response>
         /// <response code="500">Error interno del servidor</response>
         [HttpGet("con-contratos")]
+        [Authorize(Policy = "RequirePermission:proveedores.leer")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProveedorResponseDto>>), 200)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
         public async Task<ActionResult<ApiResponse<IEnumerable<ProveedorResponseDto>>>> GetConContratosVigentes()

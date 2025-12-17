@@ -236,6 +236,22 @@ builder.Services.AddAuthorization(options =>
         policy.Requirements.Add(new PermissionRequirement("roles.eliminar")));
 
     // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO USUARIOS
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:usuarios.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("usuarios.crear")));
+
+    options.AddPolicy("RequirePermission:usuarios.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("usuarios.leer")));
+
+    options.AddPolicy("RequirePermission:usuarios.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("usuarios.actualizar")));
+
+    options.AddPolicy("RequirePermission:usuarios.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("usuarios.eliminar")));
+
+    // ====================================================
     // POLICIES BASADAS EN PERMISOS - MÓDULO PERMISOS
     // ====================================================
 
@@ -356,6 +372,134 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("RequirePermission:pagos.eliminar", policy =>
         policy.Requirements.Add(new PermissionRequirement("pagos.eliminar")));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO EMPLEADOS
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:empleados.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("empleados.crear")));
+
+    options.AddPolicy("RequirePermission:empleados.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("empleados.leer")));
+
+    options.AddPolicy("RequirePermission:empleados.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("empleados.actualizar")));
+
+    options.AddPolicy("RequirePermission:empleados.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("empleados.eliminar")));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO CLIENTES
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:clientes.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("clientes.crear")));
+
+    options.AddPolicy("RequirePermission:clientes.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("clientes.leer")));
+
+    options.AddPolicy("RequirePermission:clientes.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("clientes.actualizar")));
+
+    options.AddPolicy("RequirePermission:clientes.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("clientes.eliminar")));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO CATEGORÍAS CLIENTE
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:categorias del cliente.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("categorias del cliente.crear")));
+
+    options.AddPolicy("RequirePermission:categorias del cliente.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("categorias del cliente.leer")));
+
+    options.AddPolicy("RequirePermission:categorias del cliente.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("categorias del cliente.actualizar")));
+
+    options.AddPolicy("RequirePermission:categorias del cliente.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("categorias del cliente.eliminar")));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO PREFERENCIAS CLIENTE
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:preferencias del cliente.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("preferencias del cliente.crear")));
+
+    options.AddPolicy("RequirePermission:preferencias del cliente.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("preferencias del cliente.leer")));
+
+    options.AddPolicy("RequirePermission:preferencias del cliente.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("preferencias del cliente.actualizar")));
+
+    options.AddPolicy("RequirePermission:preferencias del cliente.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("preferencias del cliente.eliminar")));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO PROVEEDORES
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:proveedores.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("proveedores.crear")));
+
+    options.AddPolicy("RequirePermission:proveedores.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("proveedores.leer")));
+
+    options.AddPolicy("RequirePermission:proveedores.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("proveedores.actualizar")));
+
+    options.AddPolicy("RequirePermission:proveedores.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("proveedores.eliminar")));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO CONTRATOS PROVEEDOR
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:contratos de proveedores.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("contratos de proveedores.crear")));
+
+    options.AddPolicy("RequirePermission:contratos de proveedores.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("contratos de proveedores.leer")));
+
+    options.AddPolicy("RequirePermission:contratos de proveedores.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("contratos de proveedores.actualizar")));
+
+    options.AddPolicy("RequirePermission:contratos de proveedores.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("contratos de proveedores.eliminar")));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO AEROLÍNEAS
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:aerolineas.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("aerolineas.crear")));
+
+    options.AddPolicy("RequirePermission:aerolineas.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("aerolineas.leer")));
+
+    options.AddPolicy("RequirePermission:aerolineas.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("aerolineas.actualizar")));
+
+    options.AddPolicy("RequirePermission:aerolineas.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("aerolineas.eliminar")));
+
+    // ====================================================
+    // POLICIES BASADAS EN PERMISOS - MÓDULO VUELOS
+    // ====================================================
+
+    options.AddPolicy("RequirePermission:vuelos.crear", policy =>
+        policy.Requirements.Add(new PermissionRequirement("vuelos.crear")));
+
+    options.AddPolicy("RequirePermission:vuelos.leer", policy =>
+        policy.Requirements.Add(new PermissionRequirement("vuelos.leer")));
+
+    options.AddPolicy("RequirePermission:vuelos.actualizar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("vuelos.actualizar")));
+
+    options.AddPolicy("RequirePermission:vuelos.eliminar", policy =>
+        policy.Requirements.Add(new PermissionRequirement("vuelos.eliminar")));
 
     // ====================================================
     // NOTA: Policies adicionales pueden agregarse dinámicamente

@@ -8,11 +8,11 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador para la gestión de Permisos
 /// Endpoints para operaciones CRUD de permisos
-/// Requiere autenticación. Solo accesible para Super Administrador y Administrador.
+/// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Super Administrador,Administrador")]
+[Authorize]
 public class PermisosController : ControllerBase
 {
     private readonly IPermisoService _permisoService;

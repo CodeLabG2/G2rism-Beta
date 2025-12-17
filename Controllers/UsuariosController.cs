@@ -10,12 +10,11 @@ namespace G2rismBeta.API.Controllers;
 
 /// <summary>
 /// Controlador para la gestión de usuarios
-/// Requiere autenticación. Solo accesible para Super Administrador y Administrador.
+/// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
-[Authorize(Roles = "Super Administrador,Administrador")]
 public class UsuariosController : ControllerBase
 {
     private readonly IUsuarioService _usuarioService;
@@ -45,6 +44,7 @@ public class UsuariosController : ControllerBase
     /// <response code="400">Datos inválidos o usuario duplicado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost]
+    [Authorize(Policy = "RequirePermission:usuarios.crear")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioResponseDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
@@ -95,6 +95,7 @@ public class UsuariosController : ControllerBase
     /// <response code="200">Lista de usuarios obtenida exitosamente</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpGet]
+    [Authorize(Policy = "RequirePermission:usuarios.leer")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<UsuarioResponseDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ApiResponse<IEnumerable<UsuarioResponseDto>>>> ObtenerTodosLosUsuarios(
@@ -133,6 +134,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpGet("{id}")]
+    [Authorize(Policy = "RequirePermission:usuarios.leer")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
@@ -178,6 +180,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpGet("{id}/roles")]
+    [Authorize(Policy = "RequirePermission:usuarios.leer")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioConRolesDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
@@ -225,6 +228,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPut("{id}")]
+    [Authorize(Policy = "RequirePermission:usuarios.actualizar")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -282,6 +286,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpDelete("{id}")]
+    [Authorize(Policy = "RequirePermission:usuarios.eliminar")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
@@ -327,6 +332,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("{id}/bloquear")]
+    [Authorize(Policy = "RequirePermission:usuarios.actualizar")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
@@ -376,6 +382,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("{id}/desbloquear")]
+    [Authorize(Policy = "RequirePermission:usuarios.actualizar")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
@@ -425,6 +432,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("{id}/activar")]
+    [Authorize(Policy = "RequirePermission:usuarios.actualizar")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
@@ -474,6 +482,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("{id}/desactivar")]
+    [Authorize(Policy = "RequirePermission:usuarios.actualizar")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]
@@ -525,6 +534,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost("{id}/asignar-roles")]
+    [Authorize(Policy = "RequirePermission:usuarios.actualizar")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioConRolesDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
@@ -582,6 +592,7 @@ public class UsuariosController : ControllerBase
     /// <response code="404">Usuario o rol no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpDelete("{id}/remover-rol/{idRol}")]
+    [Authorize(Policy = "RequirePermission:usuarios.actualizar")]
     [ProducesResponseType(typeof(ApiResponse<UsuarioConRolesDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status500InternalServerError)]

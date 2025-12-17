@@ -8,7 +8,7 @@ namespace G2rismBeta.API.Controllers;
 
 /// <summary>
 /// Controlador para la gestión de vuelos
-/// Requiere autenticación. Accesible para empleados y clientes.
+/// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
 /// </summary>
 [Route("api/[controller]")]
 [ApiController]
@@ -39,6 +39,7 @@ public class VuelosController : ControllerBase
     /// <response code="200">Lista de vuelos obtenida exitosamente</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpGet]
+    [Authorize(Policy = "RequirePermission:vuelos.leer")]
     [ProducesResponseType(typeof(IEnumerable<VueloResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<VueloResponseDto>>> GetAll()
@@ -65,6 +66,7 @@ public class VuelosController : ControllerBase
     /// <response code="404">Vuelo no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpGet("{id}")]
+    [Authorize(Policy = "RequirePermission:vuelos.leer")]
     [ProducesResponseType(typeof(VueloResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -106,6 +108,7 @@ public class VuelosController : ControllerBase
     /// Todos los parámetros son opcionales. Puedes combinarlos según tus necesidades.
     /// </remarks>
     [HttpGet("buscar")]
+    [Authorize(Policy = "RequirePermission:vuelos.leer")]
     [ProducesResponseType(typeof(IEnumerable<VueloResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<VueloResponseDto>>> Buscar(
@@ -135,6 +138,7 @@ public class VuelosController : ControllerBase
     /// <response code="200">Lista de vuelos disponibles obtenida exitosamente</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpGet("disponibles")]
+    [Authorize(Policy = "RequirePermission:vuelos.leer")]
     [ProducesResponseType(typeof(IEnumerable<VueloResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<VueloResponseDto>>> GetDisponibles()
@@ -162,7 +166,7 @@ public class VuelosController : ControllerBase
     /// <response code="404">Aerolínea o proveedor no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost]
-    [Authorize(Roles = "Super Administrador,Administrador,Empleado")]
+    [Authorize(Policy = "RequirePermission:vuelos.crear")]
     [ProducesResponseType(typeof(VueloResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -206,7 +210,7 @@ public class VuelosController : ControllerBase
     /// <response code="404">Vuelo no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Super Administrador,Administrador,Empleado")]
+    [Authorize(Policy = "RequirePermission:vuelos.actualizar")]
     [ProducesResponseType(typeof(VueloResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -248,7 +252,7 @@ public class VuelosController : ControllerBase
     /// <response code="404">Vuelo no encontrado</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Super Administrador,Administrador")]
+    [Authorize(Policy = "RequirePermission:vuelos.eliminar")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

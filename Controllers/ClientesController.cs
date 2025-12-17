@@ -8,11 +8,10 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador para la gestión de Clientes (CRM)
 /// Endpoints para operaciones CRUD de clientes y gestión de categorización
-/// Requiere autenticación. Accesible para empleados (Super Admin, Admin, Empleado).
+/// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Super Administrador,Administrador,Empleado")]
 public class ClientesController : ControllerBase
 {
     private readonly IClienteService _clienteService;
@@ -40,6 +39,7 @@ public class ClientesController : ControllerBase
     /// </remarks>
     /// <response code="200">Lista de clientes obtenida exitosamente</response>
     [HttpGet]
+    [Authorize(Policy = "RequirePermission:clientes.leer")]
     [ProducesResponseType(typeof(IEnumerable<ClienteResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ClienteResponseDto>>> GetAllClientes()
     {
@@ -405,6 +405,7 @@ public class ClientesController : ControllerBase
     /// <response code="201">Cliente creado exitosamente</response>
     /// <response code="400">Datos inválidos o error de validación</response>
     [HttpPost]
+    [Authorize(Policy = "RequirePermission:clientes.crear")]
     [ProducesResponseType(typeof(ClienteResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ClienteResponseDto>> CreateCliente([FromBody] ClienteCreateDto clienteCreateDto)
@@ -469,6 +470,7 @@ public class ClientesController : ControllerBase
     /// <response code="400">Datos inválidos o ID no coincide</response>
     /// <response code="404">Cliente no encontrado</response>
     [HttpPut("{id}")]
+    [Authorize(Policy = "RequirePermission:clientes.actualizar")]
     [ProducesResponseType(typeof(ClienteResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -587,6 +589,7 @@ public class ClientesController : ControllerBase
     /// <response code="404">Cliente no encontrado</response>
     /// <response code="400">No se puede eliminar (tiene reservas)</response>
     [HttpDelete("{id}")]
+    [Authorize(Policy = "RequirePermission:clientes.eliminar")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

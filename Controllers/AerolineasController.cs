@@ -8,11 +8,10 @@ namespace G2rismBeta.API.Controllers;
 
 /// <summary>
 /// Controlador para la gestión de aerolíneas
-/// Requiere autenticación. Accesible para empleados (Super Admin, Admin, Empleado).
+/// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
 /// </summary>
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Super Administrador,Administrador,Empleado")]
 public class AerolineasController : ControllerBase
 {
     private readonly IAerolineaService _service;
@@ -39,6 +38,7 @@ public class AerolineasController : ControllerBase
     /// <response code="200">Lista de aerolíneas obtenida exitosamente</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpGet]
+    [Authorize(Policy = "RequirePermission:aerolineas.leer")]
     [ProducesResponseType(typeof(IEnumerable<AerolineaResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IEnumerable<AerolineaResponseDto>>> GetAll()
@@ -168,6 +168,7 @@ public class AerolineasController : ControllerBase
     /// <response code="409">Ya existe una aerolínea con ese código IATA o ICAO</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPost]
+    [Authorize(Policy = "RequirePermission:aerolineas.crear")]
     [ProducesResponseType(typeof(AerolineaResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -216,6 +217,7 @@ public class AerolineasController : ControllerBase
     /// <response code="404">Aerolínea no encontrada</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpPut("{id}")]
+    [Authorize(Policy = "RequirePermission:aerolineas.actualizar")]
     [ProducesResponseType(typeof(AerolineaResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -263,6 +265,7 @@ public class AerolineasController : ControllerBase
     /// <response code="404">Aerolínea no encontrada</response>
     /// <response code="500">Error interno del servidor</response>
     [HttpDelete("{id}")]
+    [Authorize(Policy = "RequirePermission:aerolineas.eliminar")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]

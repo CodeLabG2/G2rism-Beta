@@ -8,11 +8,11 @@ namespace G2rismBeta.API.Controllers;
 /// <summary>
 /// Controlador para la gestión de Categorías de Cliente (CRM)
 /// Endpoints para operaciones CRUD de categorías y segmentación de clientes
-/// Requiere autenticación. Accesible para empleados (Super Admin, Admin, Empleado).
+/// Requiere autenticación. La autorización se maneja mediante políticas basadas en permisos.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Super Administrador,Administrador,Empleado")]
+[Authorize]
 public class CategoriasClienteController : ControllerBase
 {
     private readonly ICategoriaClienteService _categoriaService;
@@ -40,6 +40,7 @@ public class CategoriasClienteController : ControllerBase
     /// </remarks>
     /// <response code="200">Lista de categorías obtenida exitosamente</response>
     [HttpGet]
+    [Authorize(Policy = "RequirePermission:categorias del cliente.leer")]
     [ProducesResponseType(typeof(IEnumerable<CategoriaClienteResponseDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<CategoriaClienteResponseDto>>> GetAllCategorias()
     {
@@ -156,6 +157,7 @@ public class CategoriasClienteController : ControllerBase
     /// <response code="201">Categoría creada exitosamente</response>
     /// <response code="400">Datos inválidos o nombre duplicado</response>
     [HttpPost]
+    [Authorize(Policy = "RequirePermission:categorias del cliente.crear")]
     [ProducesResponseType(typeof(CategoriaClienteResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CategoriaClienteResponseDto>> CreateCategoria(
@@ -219,6 +221,7 @@ public class CategoriasClienteController : ControllerBase
     /// <response code="400">Datos inválidos o ID no coincide</response>
     /// <response code="404">Categoría no encontrada</response>
     [HttpPut("{id}")]
+    [Authorize(Policy = "RequirePermission:categorias del cliente.actualizar")]
     [ProducesResponseType(typeof(CategoriaClienteResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -322,6 +325,7 @@ public class CategoriasClienteController : ControllerBase
     /// <response code="400">No se puede eliminar porque tiene clientes asignados</response>
     /// <response code="404">Categoría no encontrada</response>
     [HttpDelete("{id}")]
+    [Authorize(Policy = "RequirePermission:categorias del cliente.eliminar")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
